@@ -63,4 +63,8 @@ export const sfx = {
     setTimeout(() => tone(1100, 0.2, 'sine', 0.07), 220);
   },
   bell: () => tone(1200, 0.08, 'square', 0.025),
+  warn: () => {
+    tone(330, 0.12, 'sine', 0.06);
+    setTimeout(() => tone(330, 0.12, 'sine', 0.06), 160);
+  },
 };

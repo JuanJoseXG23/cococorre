@@ -68,6 +68,12 @@ export class Game {
     hop: -1, facing: 'down', deadFor: 0, cause: null, knock: 0,
   };
   camRow = 0;
+  /** Fila hasta donde llegó la ola de corazones que persigue a Coco. */
+  chaseRow = -4;
+  /** 0..1: qué tan cerca está la ola (para el aviso visual). */
+  danger = 0;
+  /** Segundos de ventaja al empezar a moverse. */
+  private chaseGrace = 1.5;
   time = 0;
   score = 0;
   maxRow = 0;
@@ -321,6 +327,8 @@ export class Game {
       this.hearts++;
       sfx.heart();
       this.spawn(p.x + 0.5, p.row, 10, 'heart', '#ff4f81');
+      // Recoger un corazón empuja la ola hacia atrás.
+      this.chaseRow -= 1.5;
       this.updateScore();
     }
   }
@@ -345,13 +353,43 @@ export class Game {
 
   private updateCamera(dt: number) {
     const p = this.player;
-    if (this.started && this.alive) {
-      // Tope: la cámara nunca avanza a más de 0,6 filas por segundo.
-      this.camRow += (0.22 + 0.38 * difficultyForScore(this.score)) * dt;
-    }
+    // La cámara sólo avanza (sigue a Coco hacia adelante).
     if (p.row > this.camRow) this.camRow += (p.row - this.camRow) * Math.min(1, dt * 6);
+    this.updateChase(dt);
+    // Seguridad: si Coco sale por debajo de la pantalla, la ola lo alcanza.
     const rowsBelow = (this.view.H - this.view.baseY) / this.view.T;
     if (this.alive && p.row < this.camRow - rowsBelow + 0.6) this.die('eagle');
+  }
+
+  /**
+   * La "ola de corazones" que persigue a Coco desde atrás.
+   *  - Velocidad base según el nivel, con un leve "respiro" (sube y baja).
+   *  - Si Coco se aleja mucho, la ola acelera para seguir visible detrás.
+   *  - Si ya está muy cerca, frena un poco para dar una oportunidad.
+   *  - Cada corazón recogido la empuja hacia atrás (ver land()).
+   * Quieta: la alcanza en ~12 s (nivel 1) o ~6-7 s (nivel máximo).
+   * Tope: ~0,85 filas/s cerca de Coco; Coco avanza ~7 filas/s, nunca es imposible.
+   */
+  private updateChase(dt: number) {
+    if (!this.started || !this.alive) return;
+    if (this.chaseGrace > 0) {
+      this.chaseGrace -= dt;
+      return;
+    }
+    const p = this.player;
+    const rowsBelow = (this.view.H - this.view.baseY) / this.view.T;
+    const maxGap = Math.min(4, Math.max(3, rowsBelow - 0.4)); // siempre visible, nunca muy lejos
+    const gap = p.row - this.chaseRow;
+    let speed = 0.4 + 0.35 * difficultyForScore(this.score);
+    if (gap > maxGap) speed += Math.min(3, (gap - maxGap) * 1.5); // alcanza si vas muy adelante
+    else if (gap < 1) speed *= 0.7; // pequeño respiro cuando ya está encima
+    speed *= 1 + 0.15 * Math.sin(this.time * 1.7);
+    this.chaseRow += speed * dt;
+
+    const prevDanger = this.danger;
+    this.danger = Math.min(1, Math.max(0, 1 - (gap - 0.8) / 2.2));
+    if (prevDanger < 0.6 && this.danger >= 0.6) sfx.warn();
+    if (p.row < this.chaseRow - 0.35) this.die('eagle');
   }
 
   private updateScore() {

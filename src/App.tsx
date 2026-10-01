@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from './auth/AuthContext';
+import { logout } from './firebase/auth';
 import { AuthScreen } from './auth/AuthScreen';
 import { MenuScreen } from './screens/MenuScreen';
 import { GameScreen } from './screens/GameScreen';
@@ -18,7 +19,8 @@ export type Nav = (s: Screen) => void;
 const HASHABLE: Screen[] = ['menu', 'rewards', 'ranking', 'profile', 'admin'];
 
 export function App() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, profileError, retryProfile, loading } = useAuth();
+  const [retrying, setRetrying] = useState(false);
   const [screen, setScreen] = useState<Screen>('menu');
   const [result, setResult] = useState<GameResult | null>(null);
   const [gameKey, setGameKey] = useState(0);
@@ -56,7 +58,31 @@ export function App() {
   if (!profile) {
     return (
       <div className="screen">
-        <div className="content"><Logo small /><Loading text="Preparando tu perfil..." /></div>
+        <div className="content">
+          <Logo small />
+          {profileError ? (
+            <div className="card center">
+              <h2>No pudimos preparar tu perfil</h2>
+              <p className="muted">{profileError}</p>
+              <div className="menu-buttons">
+                <button
+                  className="btn block"
+                  disabled={retrying}
+                  onClick={async () => {
+                    setRetrying(true);
+                    await retryProfile();
+                    setRetrying(false);
+                  }}
+                >
+                  {retrying ? 'Intentando...' : 'Reintentar'}
+                </button>
+                <button className="btn ghost block" onClick={() => void logout()}>Cerrar sesión</button>
+              </div>
+            </div>
+          ) : (
+            <Loading text="Preparando tu perfil..." />
+          )}
+        </div>
       </div>
     );
   }

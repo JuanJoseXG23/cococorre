@@ -112,12 +112,87 @@ export function drawScene(ctx: CanvasRenderingContext2D, game: Game, v: View) {
   }
   ctx.globalAlpha = 1;
 
-  // 4) Muerte por "águila": un corazón gigante se lleva a Coco
+  // 4) Ola de corazones que persigue a Coco
+  drawChase(ctx, game, v);
+
+  // 5) Cuando la ola alcanza a Coco, un corazón gigante se lo lleva
   if (!game.alive && p.cause === 'eagle') {
     const t = p.deadFor;
-    ctx.fillStyle = 'rgba(255, 79, 129, 0.9)';
+    ctx.fillStyle = 'rgba(214, 110, 140, 0.92)';
     heartPath(ctx, sx(p.x + 0.5), v.baseY - (p.row - game.camRow) * T - t * H, T * 1.6);
     ctx.fill();
+  }
+}
+
+/**
+ * La ola: una franja rosada con borde ondulado y corazones que suben.
+ * Cuanto más cerca de Coco, más intensa y aparece el aviso "¡Corre, Coco!".
+ */
+function drawChase(ctx: CanvasRenderingContext2D, game: Game, v: View) {
+  const { W, H, T } = v;
+  const crest = v.baseY - (game.chaseRow - game.camRow + 0.5) * T;
+  const t = game.time;
+  const danger = game.alive ? game.danger : 0;
+
+  if (crest < H + T) {
+    // Cuerpo de la ola
+    const grad = ctx.createLinearGradient(0, crest, 0, H);
+    grad.addColorStop(0, `rgba(226, 140, 166, ${0.55 + danger * 0.2})`);
+    grad.addColorStop(1, 'rgba(196, 104, 136, 0.85)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W + 10; x += 10) {
+      const y = crest + Math.sin(x / (T * 0.9) + t * 3) * T * 0.12 + Math.sin(x / (T * 0.37) - t * 2) * T * 0.05;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Espuma clara en el borde
+    ctx.strokeStyle = 'rgba(255, 240, 245, 0.8)';
+    ctx.lineWidth = Math.max(2, T * 0.06);
+    ctx.beginPath();
+    for (let x = 0; x <= W + 10; x += 10) {
+      const y = crest + Math.sin(x / (T * 0.9) + t * 3) * T * 0.12 + Math.sin(x / (T * 0.37) - t * 2) * T * 0.05;
+      if (x === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Corazoncitos flotando dentro de la ola
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    const n = Math.ceil(W / (T * 1.4));
+    for (let i = 0; i < n; i++) {
+      const hx = ((i + 0.5) / n) * W + Math.sin(t * 1.3 + i) * T * 0.2;
+      const rise = ((t * 0.45 + i * 0.37) % 1) * T * 0.9;
+      const hy = crest + T * 0.75 - rise;
+      if (hy > H) continue;
+      heartPath(ctx, hx, hy, T * (0.14 + (i % 3) * 0.04));
+      ctx.fill();
+    }
+  }
+
+  // Aviso cuando la ola está a punto de alcanzar a Coco
+  if (danger > 0.05) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 9);
+    const edge = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.max(W, H) * 0.75);
+    edge.addColorStop(0, 'rgba(214, 90, 120, 0)');
+    edge.addColorStop(1, `rgba(214, 90, 120, ${danger * (0.25 + 0.2 * pulse)})`);
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (danger > 0.55) {
+    const size = Math.max(18, T * 0.42) * (1 + 0.06 * Math.sin(t * 9));
+    ctx.font = `700 ${size}px Fredoka, 'Segoe UI', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(120, 40, 70, 0.6)';
+    ctx.strokeText('¡Corre, Coco!', W / 2, H * 0.88);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('¡Corre, Coco!', W / 2, H * 0.88);
+    ctx.textAlign = 'start';
   }
 }
 

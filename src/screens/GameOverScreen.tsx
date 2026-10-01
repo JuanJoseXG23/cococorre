@@ -12,7 +12,7 @@ const CAUSES: Record<GameResult['cause'], string> = {
   train: 'El tren pasó muy rápido.',
   water: 'Coco cayó al agua.',
   swept: 'El río se llevó a Coco.',
-  eagle: 'Coco se quedó atrás.',
+  eagle: 'La ola de corazones alcanzó a Coco.',
 };
 
 /** Evita registrar la misma partida dos veces (p. ej. con React StrictMode). */

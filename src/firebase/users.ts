@@ -25,7 +25,6 @@ export async function createUserProfile(uid: string, username: string): Promise<
     lastScore: 0,
     claimedCount: 0,
     lastClaim: null,
-    maxOrder: 0,
     createdAt: serverTimestamp(),
     lastGameAt: serverTimestamp(),
   });
@@ -36,11 +35,15 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   return snap.exists() ? toProfile(uid, snap.data()) : null;
 }
 
-export function watchUserProfile(uid: string, cb: (p: UserProfile | null) => void): Unsubscribe {
+export function watchUserProfile(
+  uid: string,
+  cb: (p: UserProfile | null) => void,
+  onError?: (e: unknown) => void,
+): Unsubscribe {
   return onSnapshot(
     doc(getDb(), 'users', uid),
     (snap) => cb(snap.exists() ? toProfile(uid, snap.data()) : null),
-    () => cb(null),
+    (e) => onError?.(e),
   );
 }
 

@@ -229,3 +229,10 @@ test('escalera: reclamar una bloquea las anteriores (y sólo se sube)', async ()
   // y no se puede bajar maxOrder a mano para desbloquear
   await assertFails(updateDoc(doc(db, 'users/mari'), { maxOrder: 0 }));
 });
+
+test('registro: el perfil se puede crear con o sin maxOrder (pero siempre en 0)', async () => {
+  const { maxOrder, ...withoutMaxOrder } = newUser('Nueva');
+  await assertFails(setDoc(doc(ctx('nueva', 'Nueva'), 'users/nueva'), { ...withoutMaxOrder, maxOrder: 3 }));
+  await assertSucceeds(setDoc(doc(ctx('nueva', 'Nueva'), 'users/nueva'), withoutMaxOrder));
+  await assertSucceeds(setDoc(doc(ctx('otra', 'Otra'), 'users/otra'), newUser('Otra')));
+});

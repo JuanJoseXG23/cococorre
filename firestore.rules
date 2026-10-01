@@ -64,7 +64,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
                                'lastScore', 'claimedCount', 'lastClaim', 'maxOrder', 'createdAt', 'lastGameAt'])
         && d.keys().hasAll(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
-                            'lastScore', 'claimedCount', 'lastClaim', 'maxOrder', 'createdAt', 'lastGameAt'])
+                            'lastScore', 'claimedCount', 'lastClaim', 'createdAt', 'lastGameAt'])
         && d.username is string
         && d.username.matches('^[A-Za-z0-9_.-]{3,20}$')
         && d.usernameLower == d.username.lower()
@@ -76,7 +76,7 @@ service cloud.firestore {
         && d.lastScore == 0
         && d.claimedCount == 0
         && d.lastClaim == null
-        && d.maxOrder == 0
+        && d.get('maxOrder', 0) == 0
         && d.createdAt == request.time
         && d.lastGameAt == request.time;
     }
