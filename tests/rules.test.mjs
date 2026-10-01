@@ -19,7 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function newUser(name) {
   return {
     username: name, usernameLower: name.toLowerCase(), points: 0, highScore: 0, gamesPlayed: 0,
-    lastScore: 0, claimedCount: 0, lastClaim: null, createdAt: serverTimestamp(), lastGameAt: serverTimestamp(),
+    lastScore: 0, claimedCount: 0, lastClaim: null, maxOrder: 0, createdAt: serverTimestamp(), lastGameAt: serverTimestamp(),
   };
 }
 const ctx = (uid, name) => env.authenticatedContext(uid, { email: `${name.toLowerCase()}@cococorre.app` }).firestore();
@@ -34,11 +34,19 @@ before(async () => {
     const db = c.firestore();
     await setDoc(doc(db, 'admins/boss'), { note: 'admin' });
     await setDoc(doc(db, 'rewards/beso'), {
-      name: 'Un beso', description: '', cost: 100, difficulty: 'facil', image: '💋', active: true, order: 1,
+      name: 'Un beso', description: '', cost: 100, difficulty: 'facil', image: '💋', active: true, order: 2,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    });
+    await setDoc(doc(db, 'rewards/abrazo'), {
+      name: 'Un abrazo', description: '', cost: 10, difficulty: 'facil', image: '🤗', active: true, order: 1,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    });
+    await setDoc(doc(db, 'rewards/dulce'), {
+      name: 'Un dulce', description: '', cost: 20, difficulty: 'facil', image: '🍬', active: true, order: 3,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
     await setDoc(doc(db, 'rewards/off'), {
-      name: 'Inactiva', description: '', cost: 1, difficulty: 'facil', image: 'x', active: false, order: 2,
+      name: 'Inactiva', description: '', cost: 1, difficulty: 'facil', image: 'x', active: false, order: 9,
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     });
   });
@@ -102,10 +110,12 @@ test('fin de partida: suma inflada FALLA, partida legítima OK', async () => {
   if (snap.data().points !== 10) throw new Error('saldo esperado 10');
 });
 
+const ORDERS = { abrazo: 1, beso: 2, dulce: 3, off: 9 };
 function claimBatch(db, uid, name, prevPoints, prevCount, rewardId, cost, opts = {}) {
   const b = writeBatch(db);
   b.update(doc(db, `users/${uid}`), {
     points: prevPoints - (opts.subtract ?? cost), claimedCount: prevCount + 1, lastClaim: rewardId,
+    maxOrder: opts.maxOrder ?? ORDERS[rewardId],
   });
   if (!opts.skipClaim) {
     b.set(doc(db, `claims/${uid}_${rewardId}`), {
@@ -203,4 +213,19 @@ test('ranking: se actualiza junto con la partida', async () => {
   b.set(doc(db, 'games/bob_1'), { userId: 'bob', username: 'bob', score: 7, playedAt: serverTimestamp() });
   b.set(doc(db, 'leaderboard/bob'), { username: 'bob', highScore: 7, gamesPlayed: 1, updatedAt: serverTimestamp() });
   await assertSucceeds(b.commit());
+});
+
+test('escalera: reclamar una bloquea las anteriores (y sólo se sube)', async () => {
+  const db = ctx('mari', 'Mari');
+  const u = (await getDoc(doc(db, 'users/mari'))).data(); // ya reclamó "beso" (escalón 2)
+  if (u.maxOrder !== 2) throw new Error('maxOrder esperado 2');
+  // "abrazo" (escalón 1) quedó bloqueado aunque alcancen los puntos
+  await assertFails(claimBatch(db, 'mari', 'Mari', u.points, u.claimedCount, 'abrazo', 10, { rewardName: 'Un abrazo' }));
+  // tampoco sirve mentir sobre maxOrder
+  await assertFails(claimBatch(db, 'mari', 'Mari', u.points, u.claimedCount, 'abrazo', 10, { rewardName: 'Un abrazo', maxOrder: 5 }));
+  // subir en la escalera sí se puede, pero maxOrder debe ser el real
+  await assertFails(claimBatch(db, 'mari', 'Mari', u.points, u.claimedCount, 'dulce', 20, { rewardName: 'Un dulce', maxOrder: 1 }));
+  await assertSucceeds(claimBatch(db, 'mari', 'Mari', u.points, u.claimedCount, 'dulce', 20, { rewardName: 'Un dulce' }));
+  // y no se puede bajar maxOrder a mano para desbloquear
+  await assertFails(updateDoc(doc(db, 'users/mari'), { maxOrder: 0 }));
 });

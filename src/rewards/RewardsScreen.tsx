@@ -33,6 +33,12 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
   const points = profile?.points ?? 0;
   // Las inactivas sólo se muestran si ya fueron reclamadas.
   const visible = (rewards ?? []).filter((r) => r.active || claimedIds.has(r.id));
+  // Escalera: las no reclamadas por debajo de la más alta reclamada quedan bloqueadas.
+  const maxOrder = profile?.maxOrder ?? 0;
+  const isLocked = (r: Reward) => !claimedIds.has(r.id) && r.order <= maxOrder;
+  /** Recompensas que se bloquearían para siempre si se reclama `r`. */
+  const wouldLock = (r: Reward) =>
+    visible.filter((o) => o.active && !claimedIds.has(o.id) && o.order > maxOrder && o.order < r.order);
 
   const doClaim = async () => {
     if (!user || !confirming) return;
@@ -60,6 +66,10 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
         <p className="center muted" style={{ margin: 0 }}>
           Usa tus puntos para desbloquear recompensas. Cada una se puede reclamar una sola vez.
         </p>
+        <div className="notice">
+          <strong>Funcionan como una escalera:</strong> si reclamas una recompensa, todas las anteriores
+          que no hayas reclamado se <strong>bloquean para siempre</strong>. ¿Gastar ya, o ahorrar para algo más grande?
+        </div>
 
         {loadError && <div className="error">{loadError}</div>}
         {!rewards && !loadError && <Loading />}
@@ -70,10 +80,11 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
         <div className="rewards-grid">
           {visible.map((r) => {
             const claimed = claimedIds.has(r.id);
+            const locked = isLocked(r);
             const affordable = points >= r.cost;
             const pct = Math.min(100, Math.round((points / Math.max(1, r.cost)) * 100));
             return (
-              <div key={r.id} className={`card reward ${claimed ? 'claimed' : ''}`}>
+              <div key={r.id} className={`card reward ${claimed ? 'claimed' : ''} ${locked ? 'locked' : ''}`}>
                 <span className={`badge ${r.difficulty}`}>{DIFFICULTY_LABELS[r.difficulty] ?? r.difficulty}</span>
                 <div className="img"><RewardImage image={r.image} alt={r.name} /></div>
                 <h3>{r.name}</h3>
@@ -81,6 +92,8 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
                 <div className="cost">{r.cost} puntos</div>
                 {claimed ? (
                   <div className="claimed-tag">Reclamada ✓</div>
+                ) : locked ? (
+                  <div className="locked-tag">Bloqueada · reclamaste una superior</div>
                 ) : (
                   <>
                     {!affordable && (
@@ -122,10 +135,18 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
             <span>Saldo actual</span><span>{points} puntos</span>
             <span className="total">Después de reclamar</span><span className="total">{points - confirming.cost} puntos</span>
           </div>
+          {wouldLock(confirming).length > 0 && (
+            <div className="warning" style={{ marginTop: 14 }}>
+              <strong>Atención:</strong> si reclamas esta recompensa, se bloquearán para siempre:
+              <ul>
+                {wouldLock(confirming).map((o) => <li key={o.id}>{o.name}</li>)}
+              </ul>
+            </div>
+          )}
           {claimError && <div className="error" style={{ marginTop: 12 }}>{claimError}</div>}
           <div className="modal-actions">
             <button className="btn ghost" onClick={() => setConfirming(null)} disabled={busy}>Cancelar</button>
-            <button className="btn" onClick={doClaim} disabled={busy}>{busy ? '...' : 'Reclamar'}</button>
+            <button className="btn" onClick={doClaim} disabled={busy}>{busy ? '...' : wouldLock(confirming).length > 0 ? 'Reclamar igual' : 'Reclamar'}</button>
           </div>
         </Modal>
       )}

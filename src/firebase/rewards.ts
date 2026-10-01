@@ -63,12 +63,16 @@ export async function claimReward(
       const user = userSnap.data() as UserProfile;
       const reward: Reward = { id: rewardId, ...(rewardSnap.data() as Omit<Reward, 'id'>) };
       if (!reward.active) throw new ClaimError('Esta recompensa no está disponible por ahora.');
+      if ((user.maxOrder ?? 0) >= reward.order) {
+        throw new ClaimError('Esta recompensa quedó bloqueada porque ya reclamaste una superior.');
+      }
       if (user.points < reward.cost) throw new ClaimError('Aún no tienes suficientes puntos.');
       const newPoints = user.points - reward.cost;
       tx.update(userRef, {
         points: newPoints,
         claimedCount: user.claimedCount + 1,
         lastClaim: rewardId,
+        maxOrder: reward.order,
       });
       tx.set(claimRef, {
         userId: uid,
@@ -83,7 +87,7 @@ export async function claimReward(
   } catch (e) {
     if (e instanceof ClaimError) throw e;
     if ((e as { code?: string }).code === 'permission-denied') {
-      throw new ClaimError('No se pudo reclamar: es posible que ya la hayas reclamado.');
+      throw new ClaimError('No se pudo reclamar: puede que ya la hayas reclamado o que esté bloqueada.');
     }
     throw e;
   }

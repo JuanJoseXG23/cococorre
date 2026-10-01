@@ -1,11 +1,11 @@
 # 🐶❤️ CoCoCorre
 
-Un juego arcade hecho con amor para **María Isabel**: ayuda a **Coco** a cruzar calles, ríos y vías de tren, gana puntos y cámbialos por recompensas reales (abrazos, besos, Nucitas…).
+Un juego arcade hecho con amor para **María Isabel**: ayuda a **Coco** (un Pomerania) a cruzar calles, ríos y vías de tren, gana puntos y cámbialos por recompensas reales (abrazos, besos, Nucitas…).
 
 - 🕹️ Juego infinito generado por carriles, con 10 niveles de dificultad según los puntos.
 - 🔐 Cuentas con usuario y contraseña (Firebase Authentication).
 - 🪙 Los puntos de cada partida se suman a un saldo guardado en Firestore.
-- 🎁 Recompensas que se reclaman **una sola vez**, validado por las reglas de Firebase.
+- 🎁 14 recompensas en **escalera**: cada una se reclama una sola vez y, al reclamar una, las anteriores no reclamadas se bloquean (validado por las reglas de Firebase).
 - 🏅 Ranking global con los récords de todas las jugadoras.
 - 🔧 Panel de administración: usuarios, recompensas, historial y configuración.
 - 🌐 Se publica gratis en **GitHub Pages**, con Firebase como backend (plan gratuito *Spark*).
@@ -22,8 +22,9 @@ Un juego arcade hecho con amor para **María Isabel**: ayuda a **Coco** a cruzar
 6. [Instalación y desarrollo local](#6-instalación-y-desarrollo-local)
 7. [Variables de entorno](#7-variables-de-entorno)
 8. [**Guía paso a paso para ponerlo en línea**](#8-guía-paso-a-paso-para-ponerlo-en-línea) ⭐
-9. [Personalizar el juego](#9-personalizar-el-juego)
-10. [Problemas frecuentes](#10-problemas-frecuentes)
+9. [Recompensas (escalera)](#9-recompensas-escalera)
+10. [Personalizar el juego](#10-personalizar-el-juego)
+11. [Problemas frecuentes](#11-problemas-frecuentes)
 
 ---
 
@@ -104,6 +105,7 @@ users/{uid}                     ← perfil de cada jugadora
     points          (saldo para recompensas)
     highScore, gamesPlayed, lastScore, lastGameAt
     claimedCount, lastClaim
+    maxOrder        (escalón más alto reclamado en la escalera de recompensas)
     createdAt
 
 games/{uid}_{número}            ← historial de partidas
@@ -136,6 +138,7 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 | Cambiar `points: 100` → `999999` | Un usuario **sólo** puede sumar `lastScore` al terminar una partida, o restar el costo exacto de una recompensa. Cualquier otro cambio se rechaza. |
 | Inventar una partida de 5.000 puntos | Tope por partida y límite de tiempo: deben haber pasado al menos 60 ms por cada punto desde la partida anterior (Coco tarda 140 ms por salto). Además cada partida debe registrarse en `games/`. |
 | Reclamar dos veces | `claims/{uid}_{rewardId}` no puede existir antes; nadie puede borrar ni editar reclamaciones. |
+| Reclamar una recompensa ya bloqueada | Escalera: sólo se puede reclamar una recompensa con `order` mayor que `maxOrder`, y `maxOrder` sólo sube al reclamar (nadie puede bajarlo). |
 | Pagar menos por una recompensa | La regla lee el costo **real** desde `rewards/{id}` y exige que el saldo baje exactamente eso, en la misma operación atómica. |
 | Saldo negativo / recompensa inactiva | Rechazado (`points >= 0`, `active == true`). |
 | Editar recompensas, costos o configuración | Sólo administradores. |
@@ -146,7 +149,7 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 
 > **Límite honesto:** en cualquier juego que corre en el navegador, alguien con conocimientos técnicos podría enviar una puntuación falsa *dentro de los límites* (máximo 5.000 por partida y no más rápido de lo humanamente posible). Las **recompensas** sí quedan 100 % protegidas: nunca se pueden reclamar dos veces, ni pagar menos, ni gastar puntos que no se tienen. El administrador puede revisar el historial de partidas y ajustar puntos si ve algo raro.
 
-Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (14 casos) — ver [Problemas frecuentes](#10-problemas-frecuentes) para ejecutarlas.
+Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (15 casos) — ver [Problemas frecuentes](#11-problemas-frecuentes) para ejecutarlas.
 
 ---
 
@@ -362,7 +365,7 @@ El administrador se crea a mano desde la consola de Firebase: así **nadie** pue
    - Agrega un campo: nombre `nota`, tipo `string`, valor `administrador`.
    - **Guardar**.
 4. Vuelve al juego y **recarga la página**. En el menú aparecerá **🔐 ADMINISTRACIÓN**.
-5. Entra → **Recompensas** → **"✨ Cargar las 5 recompensas iniciales"** (Un abrazo, Un beso, Una Nucita, Una Gol, Un helado). Edita costos, textos o imágenes cuando quieras.
+5. Entra → **Recompensas** → **"Cargar catálogo de 14 recompensas"** → **Cargar**. Edita costos, textos o imágenes cuando quieras.
 
 > Para quitar a un administrador, borra su documento en `admins`. Para agregar otro, crea otro documento con su UID.
 
@@ -387,12 +390,31 @@ El administrador se crea a mano desde la consola de Firebase: así **nadie** pue
 
 ---
 
-## 9. Personalizar el juego
+## 9. Recompensas (escalera)
+
+Las recompensas funcionan como una **escalera** según su campo **Orden**: si se reclama una, **todas las anteriores que no se hayan reclamado se bloquean para siempre**. La pantalla de recompensas lo explica y, antes de reclamar, muestra un aviso con la lista exacta de lo que se bloqueará. Así cada decisión cuenta: ¿gastar ya o ahorrar para algo más grande?
+
+| # | Recompensa | Costo | | # | Recompensa | Costo |
+|---|---|---|---|---|---|---|
+| 1 | Un abrazo | 150 | | 8 | Unas mandingas | 2.200 |
+| 2 | Un beso | 300 | | 9 | Unas Kitchen | 2.800 |
+| 3 | Un dulce | 500 | | 10 | Crepes & Waffles | **5.000** |
+| 4 | Una Nucita | 750 | | 11 | Ida a cine | **8.000** |
+| 5 | Una Gol | 1.000 | | 12 | Una camisa | **12.000** |
+| 6 | Una chocolatina | 1.300 | | 13 | Ir a saltar a los Molinos | **17.000** |
+| 7 | Un helado | 1.700 | | 14 | Una salida con almuerzo | **24.000** |
+
+Referencia: una partida normal da ~40–80 puntos y una muy buena 150 o más. Las primeras se consiguen en pocos días; de la 10 en adelante son metas de semanas.
+Para cargarlas: **Administración → Recompensas → "Cargar catálogo de 14 recompensas"**. Crea o actualiza las 14 (si ya existían "Un abrazo", "Un beso", etc., se actualizan) y desactiva las que no estén en la lista; las reclamaciones hechas se conservan. El catálogo está en `src/rewards/defaultRewards.ts`.
+
+> Si cambias el **Orden** de una recompensa desde el panel, cambia su lugar en la escalera.
+
+## 10. Personalizar el juego
 
 - **Recompensas, costos, imágenes y mensajes:** desde el panel 🔐 Administración (no hace falta tocar código).
 - **Dificultad general:** Administración → Configuración → *Velocidad de los obstáculos*.
 - **Dar puntos de regalo:** Administración → Usuarios → *Ajustar puntos*.
-- **Nuevo personaje:** agrega una entrada en `src/game/characters.ts` (colores del perrito).
+- **Personajes:** Coco es un Pomerania sable (como el de verdad); también hay Coco Crema y Coco Naranja. Para agregar otro, añade sus colores en `src/game/characters.ts`.
 - **Puntos por nivel / nivel máximo:** `src/game/difficulty.ts`.
 - **Velocidades y topes de cada nivel, tipos de carril:** `src/game/generator.ts`.
 - **Puntos por corazón, duración del salto:** `src/game/types.ts`.
@@ -400,7 +422,7 @@ El administrador se crea a mano desde la consola de Firebase: así **nadie** pue
 
 ---
 
-## 10. Problemas frecuentes
+## 11. Problemas frecuentes
 
 **La página dice "Falta configurar Firebase"** → faltan los secrets del Paso 10 (o el `.env` local). Revisa los nombres exactos y vuelve a ejecutar el workflow.
 

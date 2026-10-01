@@ -298,7 +298,48 @@ function drawMover(ctx: CanvasRenderingContext2D, m: Mover, lane: Lane, top: num
   }
 }
 
-/** Coco: un perrito hecho de bloques, con collar y corazoncito. */
+/** Círculo "peludo": un círculo con borde de mechones. */
+function fluff(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string, tufts = 10) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  for (let i = 0; i < tufts; i++) {
+    const a = (i / tufts) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(a) * r * 0.85, cy + Math.sin(a) * r * 0.85, r * 0.32, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function ellipse(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function ear(ctx: CanvasRenderingContext2D, cx: number, baseY: number, w: number, h: number, outer: string, inner: string) {
+  ctx.fillStyle = outer;
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, baseY);
+  ctx.lineTo(cx, baseY - h);
+  ctx.lineTo(cx + w / 2, baseY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = inner;
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.22, baseY - h * 0.1);
+  ctx.lineTo(cx, baseY - h * 0.72);
+  ctx.lineTo(cx + w * 0.22, baseY - h * 0.1);
+  ctx.closePath();
+  ctx.fill();
+}
+
+/**
+ * Coco: un Pomerania peludito (pelaje sable oscuro con marcas canela en
+ * cara, pecho y patas, orejitas en punta y cola de plumero sobre el lomo).
+ */
 function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY: number, T: number, lift: number) {
   const p = game.player;
   const s = game.skin;
@@ -316,74 +357,83 @@ function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY:
     if (p.cause === 'eagle') extraLift = p.deadFor * T * 8;
     if (p.cause === 'train') alpha = Math.max(0, 1 - p.deadFor);
   }
-  // Pequeño "estirón" al saltar
+  // Pequeño "estirón" al saltar y respiración en reposo
   const stretch = p.hop >= 0 ? 1 + Math.sin(Math.PI * Math.min(1, p.hop)) * 0.12 : 1 - Math.sin(game.time * 5) * 0.02;
+
+  const cx = x + T * 0.5;
+  const groundY = top + T * 0.75;
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  if (p.cause !== 'water' && p.cause !== 'eagle') shadow(ctx, x + T * 0.5, top + T * 0.72, T * 0.3, T * 0.1);
+  if (p.cause !== 'water' && p.cause !== 'eagle') shadow(ctx, cx, top + T * 0.72, T * 0.3, T * 0.1);
 
   // Transformación: aplastar desde el suelo
-  const groundY = top + T * 0.75;
-  ctx.translate(x + T * 0.5, groundY - extraLift);
-  ctx.scale(1.18, 1.18 * squash * stretch);
-  ctx.translate(-(x + T * 0.5), -groundY);
+  ctx.translate(cx, groundY - extraLift);
+  ctx.scale(1.15, 1.15 * squash * stretch);
+  ctx.translate(-cx, -groundY);
 
   const f = p.facing;
-  const bx = x + T * 0.22;
-  const bw = T * 0.56;
-  // cola
-  ctx.fillStyle = s.bodyDark;
-  const wag = Math.sin(game.time * 14) * T * 0.04;
-  if (f === 'down') roundRect(ctx, x + T * 0.46 + wag, top + T * 0.02, T * 0.08, T * 0.2, 3);
-  else if (f === 'up') roundRect(ctx, x + T * 0.46 + wag, top + T * 0.52, T * 0.08, T * 0.18, 3);
-  else roundRect(ctx, f === 'right' ? x + T * 0.1 : x + T * 0.8, top + T * 0.2 + wag, T * 0.1, T * 0.08, 3);
+  const side = f === 'left' ? -1 : f === 'right' ? 1 : 0;
+  const wag = Math.sin(game.time * 12) * T * 0.025;
 
-  // cuerpo
-  block(ctx, bx, top + T * 0.3, bw, T * 0.4, T * 0.28, s.body, 6);
-  ctx.fillStyle = s.belly;
-  roundRect(ctx, bx + bw * 0.25, top + T * 0.3 - T * 0.28 + T * 0.12, bw * 0.5, T * 0.16, 4);
+  // Posiciones según hacia dónde mira
+  const bodyY = groundY - T * 0.24;
+  const headX = cx + side * T * 0.12;
+  const headY = f === 'up' ? groundY - T * 0.56 : f === 'down' ? groundY - T * 0.46 : groundY - T * 0.52;
+  const tailX = cx - side * T * 0.2 + wag;
+  const tailY = f === 'up' ? groundY - T * 0.3 : groundY - T * 0.44;
 
-  // cabeza
-  const hx = f === 'left' ? x + T * 0.08 : f === 'right' ? x + T * 0.42 : x + T * 0.25;
-  const hy = f === 'up' ? top + T * 0.12 : f === 'down' ? top + T * 0.42 : top + T * 0.3;
-  const hw = T * 0.5;
-  const hh = T * 0.42;
-  const headTop = hy - T * 0.42;
-  // orejas
-  ctx.fillStyle = s.ears;
-  roundRect(ctx, hx - T * 0.07, headTop + T * 0.04, T * 0.13, T * 0.3, 5);
-  roundRect(ctx, hx + hw - T * 0.06, headTop + T * 0.04, T * 0.13, T * 0.3, 5);
-  block(ctx, hx, hy, hw, T * 0.3, hh - T * 0.3 + T * 0.12, s.body, 7);
-  // collar
+  // Cola de plumero: detrás si mira hacia abajo o de lado; adelante si se aleja.
+  const drawTail = () => {
+    fluff(ctx, tailX, tailY, T * 0.15, s.bodyDark, 8);
+    fluff(ctx, tailX, tailY - T * 0.02, T * 0.1, s.body, 7);
+  };
+  if (f !== 'up') drawTail();
+
+  // Patitas canela
+  ellipse(ctx, cx - T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
+  ellipse(ctx, cx + T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
+
+  // Cuerpo esponjoso
+  fluff(ctx, cx, bodyY, T * 0.24, s.body, 11);
+  if (f !== 'up') ellipse(ctx, cx + side * T * 0.06, bodyY + T * 0.04, T * 0.12, T * 0.14, s.belly); // pecho
+
+  if (f === 'up') drawTail();
+
+  // Melena (gola) alrededor de la cabeza
+  fluff(ctx, headX, headY + T * 0.04, T * 0.22, s.bodyDark, 12);
+
+  // Orejitas en punta
+  const earOffsets = f === 'down' || f === 'up' ? [-0.11, 0.11] : side > 0 ? [-0.02, 0.13] : [-0.13, 0.02];
+  for (const o of earOffsets) {
+    ear(ctx, headX + o * T, headY - T * 0.1, T * 0.12, T * 0.15, s.ears, s.belly);
+  }
+
+  // Cabeza
+  fluff(ctx, headX, headY, T * 0.16, s.body, 9);
+
+  // Collar con corazoncito
   ctx.fillStyle = s.collar;
-  roundRect(ctx, hx + T * 0.04, hy + T * 0.2, hw - T * 0.08, T * 0.07, 3);
-  heartPath(ctx, hx + hw / 2, hy + T * 0.3, T * 0.09);
+  roundRect(ctx, headX - T * 0.15, headY + T * 0.15, T * 0.3, T * 0.055, 3);
+  heartPath(ctx, headX, headY + T * 0.24, T * 0.08);
   ctx.fill();
 
   if (f !== 'up') {
-    // cara
-    const faceX = f === 'left' ? hx + T * 0.04 : f === 'right' ? hx + T * 0.2 : hx + T * 0.1;
-    const eyeY = headTop + T * 0.2;
-    ctx.fillStyle = '#2a1a10';
-    const eyes = f === 'down' ? [faceX + T * 0.04, faceX + T * 0.26] : [faceX + T * 0.13];
-    for (const ex of eyes) {
-      ctx.beginPath();
-      ctx.arc(ex, eyeY, T * 0.045, 0, Math.PI * 2);
-      ctx.fill();
+    const fx = headX + side * T * 0.07; // centro de la cara
+    // Marcas canela: cejitas y hocico
+    const browXs = f === 'down' ? [fx - T * 0.075, fx + T * 0.075] : [fx + side * T * 0.02];
+    for (const bx of browXs) ellipse(ctx, bx, headY - T * 0.07, T * 0.03, T * 0.02, s.belly);
+    ellipse(ctx, fx + side * T * 0.04, headY + T * 0.06, T * 0.09, T * 0.065, s.belly);
+    // Ojos brillantes
+    const eyeXs = f === 'down' ? [fx - T * 0.07, fx + T * 0.07] : [fx + side * T * 0.01];
+    for (const ex of eyeXs) {
+      ellipse(ctx, ex, headY - T * 0.015, T * 0.032, T * 0.036, '#1e1416');
+      ellipse(ctx, ex + T * 0.01, headY - T * 0.03, T * 0.011, T * 0.011, '#ffffff');
     }
-    ctx.fillStyle = s.belly;
-    const snoutX = f === 'left' ? hx - T * 0.02 : f === 'right' ? hx + hw - T * 0.2 : hx + hw / 2 - T * 0.11;
-    roundRect(ctx, snoutX, eyeY + T * 0.05, T * 0.22, T * 0.13, 5);
-    ctx.fillStyle = '#2a1a10';
-    ctx.beginPath();
-    ctx.arc(snoutX + (f === 'left' ? T * 0.04 : f === 'right' ? T * 0.18 : T * 0.11), eyeY + T * 0.08, T * 0.04, 0, Math.PI * 2);
-    ctx.fill();
-    // mejillas
-    ctx.fillStyle = 'rgba(255, 120, 160, 0.45)';
-    ctx.beginPath();
-    ctx.arc(faceX + (f === 'down' ? 0 : T * 0.1), eyeY + T * 0.1, T * 0.04, 0, Math.PI * 2);
-    ctx.fill();
+    // Naricita
+    ellipse(ctx, fx + side * T * 0.1, headY + T * 0.035, T * 0.03, T * 0.022, '#1e1416');
+    // Lengüita
+    if (f === 'down') ellipse(ctx, fx, headY + T * 0.1, T * 0.025, T * 0.02, '#e88f9f');
   }
   ctx.restore();
 
@@ -393,9 +443,8 @@ function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY:
     for (let i = 0; i < 3; i++) {
       const a = game.time * 4 + (i * Math.PI * 2) / 3;
       ctx.beginPath();
-      ctx.arc(x + T * 0.5 + Math.cos(a) * T * 0.35, top + T * 0.2 + Math.sin(a) * T * 0.12, T * 0.06, 0, Math.PI * 2);
+      ctx.arc(cx + Math.cos(a) * T * 0.35, top + T * 0.2 + Math.sin(a) * T * 0.12, T * 0.06, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 }
-

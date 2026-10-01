@@ -1,11 +1,12 @@
 /**
- * Personajes disponibles. Para agregar uno nuevo basta con añadir una
- * entrada a esta lista (colores del perrito).
+ * Personajes disponibles (Pomeranias). Para agregar uno nuevo basta con
+ * añadir una entrada a esta lista.
+ *  - body: pelaje principal · bodyDark: melena y cola
+ *  - ears: orejas · belly: marcas claras (cara, pecho, patas)
  */
 export interface CharacterSkin {
   id: string;
   name: string;
-  emoji: string;
   body: string;
   bodyDark: string;
   ears: string;
@@ -14,9 +15,10 @@ export interface CharacterSkin {
 }
 
 export const CHARACTERS: CharacterSkin[] = [
-  { id: 'coco', name: 'Coco', emoji: '🐶', body: '#c98a55', bodyDark: '#a46a3a', ears: '#7a4a2a', belly: '#f3d9b8', collar: '#ff4f81' },
-  { id: 'coco-nieve', name: 'Coco Nieve', emoji: '🤍', body: '#f4f1ec', bodyDark: '#d8d1c6', ears: '#c9b8a6', belly: '#ffffff', collar: '#7ec8e3' },
-  { id: 'coco-choco', name: 'Coco Choco', emoji: '🍫', body: '#6d4430', bodyDark: '#523222', ears: '#3b2318', belly: '#a77b5e', collar: '#ffd54f' },
+  // Coco de verdad: sable gris oscuro con marcas canela.
+  { id: 'coco', name: 'Coco', body: '#4f4749', bodyDark: '#3a3335', ears: '#2c2527', belly: '#c99a6b', collar: '#d4849a' },
+  { id: 'coco-crema', name: 'Coco Crema', body: '#efe2cc', bodyDark: '#dcc8a8', ears: '#c9ab84', belly: '#fff8ec', collar: '#8fb8a4' },
+  { id: 'coco-naranja', name: 'Coco Naranja', body: '#df9f5d', bodyDark: '#c9854a', ears: '#b06d32', belly: '#f6d9b2', collar: '#96b8d2' },
 ];
 
 const KEY = 'cococorre.skin';

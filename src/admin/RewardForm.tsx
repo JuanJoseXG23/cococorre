@@ -86,7 +86,7 @@ export function RewardForm({ initial, nextOrder, onSave, onCancel }: Props) {
           />
         </div>
         <div className="field">
-          <label>Orden</label>
+          <label>Orden (escalera)</label>
           <input className="input" type="number" step={1} value={r.order} onChange={(e) => set('order', Math.floor(Number(e.target.value) || 0))} />
         </div>
       </div>

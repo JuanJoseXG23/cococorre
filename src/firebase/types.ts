@@ -11,6 +11,8 @@ export interface UserProfile {
   lastScore: number;
   claimedCount: number;
   lastClaim: string | null;
+  /** `order` de la recompensa más alta reclamada (escalera). */
+  maxOrder?: number;
   createdAt: Timestamp | null;
   lastGameAt: Timestamp | null;
 }

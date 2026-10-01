@@ -25,6 +25,7 @@ export async function createUserProfile(uid: string, username: string): Promise<
     lastScore: 0,
     claimedCount: 0,
     lastClaim: null,
+    maxOrder: 0,
     createdAt: serverTimestamp(),
     lastGameAt: serverTimestamp(),
   });

@@ -13,23 +13,52 @@ export function Logo({ small = false }: { small?: boolean }) {
   );
 }
 
+/** Mechones alrededor de un círculo (pelaje esponjoso de Pomerania). */
+function tufts(cx: number, cy: number, r: number, n: number, tr: number) {
+  return Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    return <circle key={i} cx={cx + Math.cos(a) * r} cy={cy + Math.sin(a) * r} r={tr} />;
+  });
+}
+
+/** Cara de Coco: un Pomerania sable con marcas canela. */
 export function CocoFace() {
   return (
     <svg viewBox="0 0 120 120" aria-label="Coco">
-      <ellipse cx="28" cy="58" rx="16" ry="28" fill="#7a4a2a" transform="rotate(12 28 58)" />
-      <ellipse cx="92" cy="58" rx="16" ry="28" fill="#7a4a2a" transform="rotate(-12 92 58)" />
-      <circle cx="60" cy="64" r="38" fill="#c98a55" />
-      <ellipse cx="60" cy="82" rx="20" ry="15" fill="#f3d9b8" />
-      <circle cx="45" cy="58" r="6" fill="#2a1a10" />
-      <circle cx="75" cy="58" r="6" fill="#2a1a10" />
-      <circle cx="47" cy="56" r="2" fill="#fff" />
-      <circle cx="77" cy="56" r="2" fill="#fff" />
-      <ellipse cx="60" cy="74" rx="8" ry="6" fill="#2a1a10" />
-      <path d="M60 80 v6 M52 88 q8 6 16 0" stroke="#2a1a10" strokeWidth="3" fill="none" strokeLinecap="round" />
-      <ellipse cx="38" cy="74" rx="6" ry="4" fill="#ff8fb1" opacity="0.6" />
-      <ellipse cx="82" cy="74" rx="6" ry="4" fill="#ff8fb1" opacity="0.6" />
-      <rect x="34" y="98" width="52" height="9" rx="4" fill="#ff4f81" />
-      <path d="M60 104 l-6 -6 a4 4 0 0 1 6 -5 a4 4 0 0 1 6 5 z" fill="#ffd54f" />
+      {/* orejitas en punta */}
+      <path d="M30 44 L38 10 L54 34 Z" fill="#2c2527" />
+      <path d="M90 44 L82 10 L66 34 Z" fill="#2c2527" />
+      <path d="M36 38 L39 20 L48 33 Z" fill="#c99a6b" />
+      <path d="M84 38 L81 20 L72 33 Z" fill="#c99a6b" />
+      {/* melena */}
+      <g fill="#3a3335">
+        <circle cx="60" cy="66" r="40" />
+        {tufts(60, 66, 40, 18, 9)}
+      </g>
+      {/* cabeza */}
+      <g fill="#4f4749">
+        <circle cx="60" cy="58" r="28" />
+        {tufts(60, 58, 27, 14, 6)}
+      </g>
+      {/* frente café y marcas canela */}
+      <ellipse cx="60" cy="40" rx="14" ry="9" fill="#7a5a44" />
+      <ellipse cx="47" cy="49" rx="5" ry="3.5" fill="#c99a6b" />
+      <ellipse cx="73" cy="49" rx="5" ry="3.5" fill="#c99a6b" />
+      <ellipse cx="60" cy="72" rx="15" ry="11" fill="#c99a6b" />
+      <ellipse cx="42" cy="70" rx="7" ry="6" fill="#b88a5e" />
+      <ellipse cx="78" cy="70" rx="7" ry="6" fill="#b88a5e" />
+      {/* ojos */}
+      <ellipse cx="48" cy="58" rx="5.5" ry="6" fill="#1e1416" />
+      <ellipse cx="72" cy="58" rx="5.5" ry="6" fill="#1e1416" />
+      <circle cx="50" cy="56" r="2" fill="#fff" />
+      <circle cx="74" cy="56" r="2" fill="#fff" />
+      {/* nariz y boquita */}
+      <ellipse cx="60" cy="67" rx="5.5" ry="4" fill="#1e1416" />
+      <path d="M60 71 v3 M54 76 q6 4 12 0" stroke="#1e1416" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      <ellipse cx="60" cy="80" rx="3.5" ry="3" fill="#e88f9f" />
+      {/* collar */}
+      <rect x="36" y="96" width="48" height="8" rx="4" fill="#d4849a" />
+      <path d="M60 111 l-6 -6 a4 4 0 0 1 6 -5 a4 4 0 0 1 6 5 z" fill="#ecd3a8" />
     </svg>
   );
 }

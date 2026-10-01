@@ -12,6 +12,9 @@ rules_version = '2';
 //        (con tope de puntuación y límite de velocidad);
 //      * reclamar una recompensa -> points -= costo REAL de la recompensa,
 //        creando claims/{uid}_{rewardId}, que no puede existir antes.
+//        Las recompensas son una ESCALERA: sólo se puede reclamar una
+//        recompensa con `order` MAYOR que la última reclamada (maxOrder);
+//        las anteriores no reclamadas quedan bloqueadas para siempre.
 //  - Nadie puede editar ni borrar reclamaciones.
 //  - Sólo un administrador (documento en /admins/{uid}, creado a mano
 //    desde la consola de Firebase) puede tocar recompensas y config.
@@ -59,9 +62,9 @@ service cloud.firestore {
     function validNewUser(uid) {
       let d = request.resource.data;
       return d.keys().hasOnly(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
-                               'lastScore', 'claimedCount', 'lastClaim', 'createdAt', 'lastGameAt'])
+                               'lastScore', 'claimedCount', 'lastClaim', 'maxOrder', 'createdAt', 'lastGameAt'])
         && d.keys().hasAll(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
-                            'lastScore', 'claimedCount', 'lastClaim', 'createdAt', 'lastGameAt'])
+                            'lastScore', 'claimedCount', 'lastClaim', 'maxOrder', 'createdAt', 'lastGameAt'])
         && d.username is string
         && d.username.matches('^[A-Za-z0-9_.-]{3,20}$')
         && d.usernameLower == d.username.lower()
@@ -73,6 +76,7 @@ service cloud.firestore {
         && d.lastScore == 0
         && d.claimedCount == 0
         && d.lastClaim == null
+        && d.maxOrder == 0
         && d.createdAt == request.time
         && d.lastGameAt == request.time;
     }
@@ -101,7 +105,7 @@ service cloud.firestore {
       let before = resource.data;
       let after = request.resource.data;
       let rid = after.lastClaim;
-      return after.diff(before).affectedKeys().hasOnly(['points', 'claimedCount', 'lastClaim'])
+      return after.diff(before).affectedKeys().hasOnly(['points', 'claimedCount', 'lastClaim', 'maxOrder'])
         && rid is string
         // Nunca reclamada antes, y la reclamación se crea en esta misma operación.
         && !exists(claimPath(uid, rid))
@@ -109,7 +113,10 @@ service cloud.firestore {
         && get(rewardPath(rid)).data.active == true
         && after.points == before.points - get(rewardPath(rid)).data.cost
         && after.points >= 0
-        && after.claimedCount == before.claimedCount + 1;
+        && after.claimedCount == before.claimedCount + 1
+        // Escalera: sólo hacia arriba. Reclamar una bloquea las anteriores.
+        && get(rewardPath(rid)).data.order > before.get('maxOrder', 0)
+        && after.maxOrder == get(rewardPath(rid)).data.order;
     }
 
     // El administrador puede regalar/ajustar puntos (y nada más).
