@@ -4,7 +4,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { getAuthOrThrow } from './app';
+import { FORGET_SESSION_KEY, getAuthOrThrow } from './app';
 import { createUserProfile, getUserProfile } from './users';
 import { MIN_PASSWORD_LENGTH, USERNAME_EMAIL_DOMAIN, USERNAME_PATTERN } from '../config';
 
@@ -50,4 +50,18 @@ export async function login(username: string, password: string): Promise<User> {
 
 export function logout(): Promise<void> {
   return signOut(getAuthOrThrow());
+}
+
+/**
+ * Salida de emergencia cuando Firebase no responde: borra la sesión guardada
+ * en este navegador (sin necesitar internet) y recarga la página.
+ */
+export function forgetSessionAndReload(): void {
+  try {
+    // Se borra al recargar, antes de que Firebase abra la sesión (ver firebase/app.ts).
+    localStorage.setItem(FORGET_SESSION_KEY, '1');
+  } catch {
+    /* sin almacenamiento */
+  }
+  location.reload();
 }

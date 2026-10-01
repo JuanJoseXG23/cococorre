@@ -14,6 +14,19 @@ const firebaseConfig = {
   appId: env.VITE_FIREBASE_APP_ID,
 };
 
+export const FORGET_SESSION_KEY = 'cococorre.forgetSession';
+
+// "Volver a iniciar sesión" cuando Firebase no respondía: se borra la sesión
+// guardada ANTES de iniciar Firebase (IndexedDB atiende el borrado primero).
+try {
+  if (localStorage.getItem(FORGET_SESSION_KEY)) {
+    localStorage.removeItem(FORGET_SESSION_KEY);
+    indexedDB.deleteDatabase('firebaseLocalStorageDb');
+  }
+} catch {
+  /* sin almacenamiento */
+}
+
 /** false si faltan las variables de entorno (se muestra una pantalla de ayuda). */
 export const firebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);
 

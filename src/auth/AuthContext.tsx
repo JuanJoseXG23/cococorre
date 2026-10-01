@@ -19,6 +19,8 @@ interface AuthState {
   isAdmin: boolean;
   config: GameConfig;
   loading: boolean;
+  /** true si la conexión con Firebase tarda demasiado (para mostrar ayuda). */
+  slow: boolean;
   reloadConfig: () => Promise<void>;
 }
 
@@ -39,7 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [loading, setLoading] = useState(true);
+  const [slow, setSlow] = useState(false);
   const repairing = useRef(false);
+
+  // Si Firebase no responde (mala señal, red que bloquea Google...), avisar en vez de esperar en silencio.
+  useEffect(() => {
+    if (!loading) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   useEffect(() => onAuthStateChanged(getAuthOrThrow(), (u) => {
     setUser(u);
@@ -114,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, profileError, retryProfile, isAdmin, config, loading, reloadConfig }}
+      value={{ user, profile, profileError, retryProfile, isAdmin, config, loading, slow, reloadConfig }}
     >
       {children}
     </AuthContext.Provider>

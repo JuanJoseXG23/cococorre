@@ -4,6 +4,7 @@ import { logout } from '../firebase/auth';
 import { Logo } from '../components/Logo';
 import { HeartIcon } from '../components/Icons';
 import { CharacterPreview } from '../components/CharacterPreview';
+import { Modal } from '../components/Modal';
 import { CHARACTERS, getSavedSkin, isUnlocked, saveSkin, type CharacterSkin } from '../game/characters';
 import type { Nav } from '../App';
 
@@ -11,25 +12,20 @@ export function MenuScreen({ nav }: { nav: Nav }) {
   const { profile, isAdmin, config } = useAuth();
   const hearts = profile?.heartsTotal ?? 0;
   const [skin, setSkin] = useState(getSavedSkin(hearts).id);
-  /** Personaje bloqueado que la jugadora tocó (para mostrar cuánto falta). */
-  const [hintId, setHintId] = useState('');
+  /** Personaje bloqueado que se está previsualizando. */
+  const [preview, setPreview] = useState<CharacterSkin | null>(null);
 
   const pick = (c: CharacterSkin) => {
     if (!isUnlocked(c, hearts)) {
-      setHintId(c.id);
+      setPreview(c);
       return;
     }
-    setHintId('');
     setSkin(c.id);
     saveSkin(c.id);
   };
 
   const unlockedCount = CHARACTERS.filter((c) => isUnlocked(c, hearts)).length;
-  const hinted = CHARACTERS.find((c) => c.id === hintId && !isUnlocked(c, hearts));
-  const missing = hinted ? hinted.unlockHearts - hearts : 0;
-  const hint = hinted
-    ? `Te faltan ${missing} ${missing === 1 ? 'corazón' : 'corazones'} para desbloquear a ${hinted.name} (${hinted.breedLabel}).`
-    : '';
+  const missing = preview ? Math.max(0, preview.unlockHearts - hearts) : 0;
 
   return (
     <div className="screen">
@@ -68,9 +64,9 @@ export function MenuScreen({ nav }: { nav: Nav }) {
                   key={c.id}
                   className={`char ${skin === c.id ? 'selected' : ''} ${unlocked ? '' : 'locked'}`}
                   onClick={() => pick(c)}
-                  aria-label={unlocked ? `Elegir a ${c.name}` : `${c.name}: bloqueado, requiere ${c.unlockHearts} corazones`}
+                  aria-label={unlocked ? `Elegir a ${c.name}` : `Ver a ${c.name} (bloqueado, requiere ${c.unlockHearts} corazones)`}
                 >
-                  <CharacterPreview skin={c} size={58} locked={!unlocked} />
+                  <CharacterPreview skin={c} size={58} />
                   <span className="char-name">{c.name}</span>
                   {unlocked ? (
                     <span className="char-breed">{c.breedLabel}</span>
@@ -81,15 +77,37 @@ export function MenuScreen({ nav }: { nav: Nav }) {
               );
             })}
           </div>
-          {hint ? (
-            <p className="char-hint">{hint}</p>
-          ) : (
-            <p className="char-hint muted">Recoge corazones en el camino para desbloquear nuevos personajes.</p>
-          )}
+          <p className="char-hint muted">
+            Recoge corazones en el camino para desbloquear nuevos personajes. Toca uno bloqueado para verlo.
+          </p>
         </div>
 
         <button className="link-btn" onClick={() => void logout()}>Cerrar sesión</button>
       </div>
+
+      {preview && (
+        <Modal onClose={() => setPreview(null)}>
+          <div className="center">
+            <div className="preview-stage">
+              <CharacterPreview skin={preview} size={150} animate />
+            </div>
+            <h2 style={{ margin: '8px 0 2px' }}>{preview.name}</h2>
+            <p className="muted" style={{ margin: 0 }}>{preview.breedLabel}</p>
+            <div className="preview-lock">
+              <HeartIcon /> {hearts} / {preview.unlockHearts} corazones
+            </div>
+            <div className="progress" aria-hidden>
+              <div style={{ width: `${Math.min(100, (hearts / preview.unlockHearts) * 100)}%` }} />
+            </div>
+            <p style={{ marginBottom: 0 }}>
+              Te {missing === 1 ? 'falta' : 'faltan'} <strong>{missing}</strong> {missing === 1 ? 'corazón' : 'corazones'} para desbloquearlo.
+            </p>
+          </div>
+          <div className="modal-actions">
+            <button className="btn block" onClick={() => setPreview(null)}>¡A recoger corazones!</button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
