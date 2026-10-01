@@ -1,5 +1,3 @@
-import { PLAYER_NAME } from '../config';
-
 /** Logo del juego: Coco (perrito) + "CoCoCorre". */
 export function Logo({ small = false }: { small?: boolean }) {
   return (
@@ -8,7 +6,6 @@ export function Logo({ small = false }: { small?: boolean }) {
       <div className="title" style={small ? { fontSize: '2rem' } : undefined}>
         CoCo<span className="accent">Corre</span>
       </div>
-      {!small && <div className="subtitle">Hecho con cariño para {PLAYER_NAME}</div>}
     </div>
   );
 }
