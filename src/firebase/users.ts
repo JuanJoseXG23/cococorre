@@ -69,6 +69,8 @@ export interface GameSubmitResult {
   heartsBefore: number;
   /** false si no se pudieron guardar los corazones (p. ej. reglas sin actualizar). */
   heartsSaved: boolean;
+  /** Motivo por el que no se guardaron los corazones. */
+  heartsError?: unknown;
 }
 
 /**
@@ -79,7 +81,7 @@ export interface GameSubmitResult {
 export async function submitGame(uid: string, score: number, hearts = 0): Promise<GameSubmitResult> {
   const db = getDb();
   const userRef = doc(db, 'users', uid);
-  const result = await runTransaction(db, async (tx) => {
+  const result: GameSubmitResult = await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
     if (!snap.exists()) throw new Error('No se encontró tu perfil.');
     const u = snap.data() as UserProfile;
@@ -113,10 +115,17 @@ export async function submitGame(uid: string, score: number, hearts = 0): Promis
   // Los corazones se guardan aparte: si fallara, la partida y los puntos ya están a salvo.
   if (hearts > 0) {
     try {
-      await updateDoc(userRef, { heartsTotal: increment(hearts), heartsGame: result.profile.gamesPlayed });
-    } catch {
+      await saveHearts(uid, hearts, result.profile.gamesPlayed);
+    } catch (e) {
+      console.error('No se pudieron guardar los corazones', e);
       result.heartsSaved = false;
+      result.heartsError = e;
     }
   }
   return result;
+}
+
+/** Suma los corazones de la última partida (las reglas lo permiten una vez por partida). */
+export function saveHearts(uid: string, hearts: number, gamesPlayed: number): Promise<void> {
+  return updateDoc(doc(getDb(), 'users', uid), { heartsTotal: increment(hearts), heartsGame: gamesPlayed });
 }

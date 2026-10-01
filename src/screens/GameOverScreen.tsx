@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
-import { submitGame, type GameSubmitResult } from '../firebase/users';
+import { saveHearts, submitGame, type GameSubmitResult } from '../firebase/users';
 import { friendlyError } from '../firebase/errors';
 import { Confetti, Loading } from '../components/Decorations';
 import { levelForScore } from '../game/difficulty';
@@ -59,6 +59,21 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
     return () => window.removeEventListener('keydown', onKey);
   }, [saved, onPlayAgain]);
 
+  const [heartsRetry, setHeartsRetry] = useState<'idle' | 'busy' | 'failed'>('idle');
+  const retryHearts = async () => {
+    if (!user || !saved) return;
+    setHeartsRetry('busy');
+    try {
+      await saveHearts(user.uid, result.hearts, saved.profile.gamesPlayed);
+      setSaved({ ...saved, heartsSaved: true, heartsError: undefined });
+      setHeartsRetry('idle');
+    } catch (e) {
+      console.error('No se pudieron guardar los corazones', e);
+      setSaved({ ...saved, heartsError: e });
+      setHeartsRetry('failed');
+    }
+  };
+
   const newRecord = Boolean(saved?.newRecord && result.score > 0);
   const unlocked = saved?.heartsSaved ? newlyUnlocked(saved.heartsBefore, saved.heartsBefore + result.hearts) : [];
   const busy = !saved && !error;
@@ -100,6 +115,16 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
               <div className="form">
                 <div className="error">No se pudieron guardar los puntos: {error}</div>
                 <button className="btn sage block" onClick={save}>Reintentar</button>
+              </div>
+            )}
+            {saved && !saved.heartsSaved && (
+              <div className="form" style={{ marginBottom: 12 }}>
+                <div className="error">
+                  Los puntos quedaron guardados, pero los corazones no: {friendlyError(saved.heartsError)}
+                </div>
+                <button className="btn sage block" onClick={retryHearts} disabled={heartsRetry === 'busy'}>
+                  {heartsRetry === 'busy' ? 'Guardando...' : 'Reintentar corazones'}
+                </button>
               </div>
             )}
             {saved && (
