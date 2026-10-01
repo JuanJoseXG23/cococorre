@@ -1,0 +1,204 @@
+rules_version = '2';
+
+// =====================================================================
+//  CoCoCorre — Reglas de seguridad de Cloud Firestore
+// ---------------------------------------------------------------------
+//  Principio: el navegador NUNCA es de confianza. Cada escritura se
+//  valida aquí, en los servidores de Google.
+//
+//  - Un usuario sólo puede:
+//      * crear su perfil con todo en 0;
+//      * registrar una partida  -> points += score, gamesPlayed += 1
+//        (con tope de puntuación y límite de velocidad);
+//      * reclamar una recompensa -> points -= costo REAL de la recompensa,
+//        creando claims/{uid}_{rewardId}, que no puede existir antes.
+//  - Nadie puede editar ni borrar reclamaciones.
+//  - Sólo un administrador (documento en /admins/{uid}, creado a mano
+//    desde la consola de Firebase) puede tocar recompensas y config.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Utilidades ----------
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+    function rewardPath(rid) {
+      return /databases/$(database)/documents/rewards/$(rid);
+    }
+    function claimPath(uid, rid) {
+      return /databases/$(database)/documents/claims/$(uid + '_' + rid);
+    }
+    function gamePath(uid, n) {
+      return /databases/$(database)/documents/games/$(uid + '_' + string(n));
+    }
+
+    // Puntuación máxima aceptada en una sola partida.
+    function maxScorePerGame() { return 5000; }
+    // Tiempo mínimo (ms) que debe haber transcurrido por cada punto obtenido.
+    // Coco tarda ~140 ms en dar un salto, así que 60 ms/punto es generoso
+    // para la jugadora pero impide inventar partidas de miles de puntos.
+    function msPerPoint() { return 60; }
+
+    // ---------- Administradores ----------
+    // Se crean SOLO desde la consola de Firebase (write: false).
+    match /admins/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- Usuarios ----------
+    function validNewUser(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
+                               'lastScore', 'claimedCount', 'lastClaim', 'createdAt', 'lastGameAt'])
+        && d.keys().hasAll(['username', 'usernameLower', 'points', 'highScore', 'gamesPlayed',
+                            'lastScore', 'claimedCount', 'lastClaim', 'createdAt', 'lastGameAt'])
+        && d.username is string
+        && d.username.matches('^[A-Za-z0-9_.-]{3,20}$')
+        && d.usernameLower == d.username.lower()
+        // El usuario debe coincidir con la cuenta de Authentication.
+        && request.auth.token.email == d.usernameLower + '@cococorre.app'
+        && d.points == 0
+        && d.highScore == 0
+        && d.gamesPlayed == 0
+        && d.lastScore == 0
+        && d.claimedCount == 0
+        && d.lastClaim == null
+        && d.createdAt == request.time
+        && d.lastGameAt == request.time;
+    }
+
+    // Fin de partida: sólo se puede SUMAR la puntuación de la partida.
+    function isGameUpdate(uid) {
+      let before = resource.data;
+      let after = request.resource.data;
+      return after.diff(before).affectedKeys()
+               .hasOnly(['points', 'highScore', 'gamesPlayed', 'lastScore', 'lastGameAt'])
+        && after.lastScore is int
+        && after.lastScore >= 0
+        && after.lastScore <= maxScorePerGame()
+        && after.gamesPlayed == before.gamesPlayed + 1
+        && after.points == before.points + after.lastScore
+        && after.highScore == (after.lastScore > before.highScore ? after.lastScore : before.highScore)
+        && after.lastGameAt == request.time
+        // No se pueden conseguir N puntos en menos de N * msPerPoint ms.
+        && request.time >= before.lastGameAt + duration.value(after.lastScore * msPerPoint(), 'ms')
+        // La partida debe quedar registrada en /games en la misma operación.
+        && existsAfter(gamePath(uid, after.gamesPlayed));
+    }
+
+    // Reclamar: sólo se puede RESTAR exactamente el costo real de la recompensa.
+    function isClaimUpdate(uid) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let rid = after.lastClaim;
+      return after.diff(before).affectedKeys().hasOnly(['points', 'claimedCount', 'lastClaim'])
+        && rid is string
+        // Nunca reclamada antes, y la reclamación se crea en esta misma operación.
+        && !exists(claimPath(uid, rid))
+        && existsAfter(claimPath(uid, rid))
+        && get(rewardPath(rid)).data.active == true
+        && after.points == before.points - get(rewardPath(rid)).data.cost
+        && after.points >= 0
+        && after.claimedCount == before.claimedCount + 1;
+    }
+
+    // El administrador puede regalar/ajustar puntos (y nada más).
+    function isAdminPointsUpdate() {
+      let after = request.resource.data;
+      return isAdmin()
+        && after.diff(resource.data).affectedKeys().hasOnly(['points'])
+        && after.points is int
+        && after.points >= 0
+        && after.points <= 1000000;
+    }
+
+    match /users/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid && validNewUser(uid);
+      allow update: if signedIn() && (
+                      (request.auth.uid == uid && (isGameUpdate(uid) || isClaimUpdate(uid)))
+                      || isAdminPointsUpdate()
+                    );
+      allow delete: if false;
+    }
+
+    // ---------- Historial de partidas ----------
+    // ID determinista {uid}_{numeroDePartida}: sólo una por cada fin de partida.
+    match /games/{gameId} {
+      allow get, list: if isAdmin()
+                       || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userId', 'username', 'score', 'playedAt'])
+        && request.resource.data.keys().hasAll(['userId', 'username', 'score', 'playedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.username == get(userPath(request.auth.uid)).data.username
+        && getAfter(userPath(request.auth.uid)).data.gamesPlayed
+             == get(userPath(request.auth.uid)).data.gamesPlayed + 1
+        && gameId == request.auth.uid + '_' + string(getAfter(userPath(request.auth.uid)).data.gamesPlayed)
+        && request.resource.data.score == getAfter(userPath(request.auth.uid)).data.lastScore
+        && request.resource.data.playedAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // ---------- Recompensas ----------
+    function validReward() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'description', 'cost', 'difficulty', 'image', 'active',
+                               'order', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.description is string && d.description.size() <= 300
+        && d.cost is int && d.cost >= 0 && d.cost <= 1000000
+        && d.difficulty in ['facil', 'media', 'dificil', 'epica']
+        && d.image is string && d.image.size() <= 400000
+        && d.active is bool
+        && d.order is int;
+    }
+
+    match /rewards/{rewardId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin() && validReward();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Reclamaciones ----------
+    // ID determinista {uid}_{rewardId}  =>  imposible reclamar dos veces.
+    match /claims/{claimId} {
+      allow get, list: if isAdmin()
+                       || (signedIn() && resource.data.userId == request.auth.uid);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['userId', 'username', 'rewardId', 'rewardName', 'cost', 'claimedAt'])
+        && request.resource.data.keys().hasAll(['userId', 'username', 'rewardId', 'rewardName', 'cost', 'claimedAt'])
+        && request.resource.data.userId == request.auth.uid
+        && claimId == request.auth.uid + '_' + request.resource.data.rewardId
+        && get(rewardPath(request.resource.data.rewardId)).data.active == true
+        && request.resource.data.cost == get(rewardPath(request.resource.data.rewardId)).data.cost
+        && request.resource.data.rewardName == get(rewardPath(request.resource.data.rewardId)).data.name
+        && request.resource.data.username == get(userPath(request.auth.uid)).data.username
+        && request.resource.data.claimedAt == request.time
+        // El saldo debe descontarse en la misma operación.
+        && getAfter(userPath(request.auth.uid)).data.lastClaim == request.resource.data.rewardId
+        && getAfter(userPath(request.auth.uid)).data.points
+             == get(userPath(request.auth.uid)).data.points
+                - get(rewardPath(request.resource.data.rewardId)).data.cost;
+      // Una reclamación es permanente.
+      allow update, delete: if false;
+    }
+
+    // ---------- Configuración (mensajes, dificultad) ----------
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
