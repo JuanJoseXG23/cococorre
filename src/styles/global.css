@@ -221,6 +221,38 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; colo
 }
 .skin-picker button.selected { border-color: var(--rose); background: var(--rose-soft); }
 .swatch { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 1px solid rgba(0, 0, 0, 0.1); }
+.char-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 500; }
+.hearts-count { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: var(--rose-dark); }
+.char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.char {
+  border: 1.5px solid var(--line);
+  background: var(--cream);
+  border-radius: 14px;
+  padding: 6px 4px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.char.selected { border-color: var(--rose); background: var(--rose-soft); }
+.char.locked { background: #f4f2f4; }
+.char-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.char-breed { font-size: 0.7rem; color: var(--ink-soft); text-align: center; line-height: 1.15; }
+.char-lock { font-size: 0.78rem; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 3px; }
+.char-hint { margin: 10px 0 0; font-size: 0.88rem; text-align: center; }
+.unlock-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--rose-soft);
+  border: 1.5px solid var(--rose);
+  border-radius: 14px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  text-align: left;
+}
 .welcome { text-align: center; color: var(--ink-soft); margin: 0; }
 .link-btn {
   background: none;

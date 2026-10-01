@@ -4,6 +4,8 @@ import { submitGame, type GameSubmitResult } from '../firebase/users';
 import { friendlyError } from '../firebase/errors';
 import { Confetti, Loading } from '../components/Decorations';
 import { levelForScore } from '../game/difficulty';
+import { newlyUnlocked } from '../game/characters';
+import { CharacterPreview } from '../components/CharacterPreview';
 import type { GameResult } from '../game/types';
 import type { Nav } from '../App';
 
@@ -29,7 +31,7 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
     setError('');
     let p = submitted.get(result);
     if (!p) {
-      p = submitGame(user.uid, result.score);
+      p = submitGame(user.uid, result.score, result.hearts);
       submitted.set(result, p);
     }
     p.then(setSaved).catch((e) => {
@@ -58,11 +60,12 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
   }, [saved, onPlayAgain]);
 
   const newRecord = Boolean(saved?.newRecord && result.score > 0);
+  const unlocked = saved?.heartsSaved ? newlyUnlocked(saved.heartsBefore, saved.heartsBefore + result.hearts) : [];
   const busy = !saved && !error;
 
   return (
     <div className="screen">
-      {newRecord && <Confetti />}
+      {(newRecord || unlocked.length > 0) && <Confetti />}
       <div className="content">
         <h1 className="gameover-title">Fin del juego</h1>
         <div className="card">
@@ -73,6 +76,16 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
             Llegaste al nivel {levelForScore(result.score)}
             {result.hearts > 0 && ` · ${result.hearts} ${result.hearts > 1 ? 'corazones' : 'corazón'}`}
           </p>
+
+          {unlocked.map((c) => (
+            <div key={c.id} className="unlock-banner">
+              <CharacterPreview skin={c} size={56} />
+              <div>
+                <strong>¡Desbloqueaste a {c.name}!</strong>
+                <div className="muted" style={{ fontSize: '0.9rem' }}>{c.breedLabel} · elígelo en el menú</div>
+              </div>
+            </div>
+          ))}
 
           {newRecord && (
             <div className="record-banner" style={{ marginTop: 14 }}>

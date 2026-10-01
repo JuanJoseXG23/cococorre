@@ -13,6 +13,10 @@ export interface UserProfile {
   lastClaim: string | null;
   /** `order` de la recompensa más alta reclamada (escalera). */
   maxOrder?: number;
+  /** Corazones recogidos en total (desbloquean personajes; no se gastan). */
+  heartsTotal?: number;
+  /** Última partida cuyos corazones ya se sumaron. */
+  heartsGame?: number;
   createdAt: Timestamp | null;
   lastGameAt: Timestamp | null;
 }

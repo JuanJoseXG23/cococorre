@@ -7,6 +7,7 @@ Un juego arcade hecho con amor para **María Isabel**: ayuda a **Coco** (un Pome
 - 🪙 Los puntos de cada partida se suman a un saldo guardado en Firestore.
 - 🎁 14 recompensas en **escalera**: cada una se reclama una sola vez y, al reclamar una, las anteriores no reclamadas se bloquean (validado por las reglas de Firebase).
 - 🏅 Ranking global con los récords de todas las jugadoras.
+- 🐾 7 personajes: 3 Pomeranias desde el inicio y 4 desbloqueables con los corazones recogidos (Tony, Jocko, Toby y Cachetes José).
 - 🔧 Panel de administración: usuarios, recompensas, historial y configuración.
 - 🌐 Se publica gratis en **GitHub Pages**, con Firebase como backend (plan gratuito *Spark*).
 
@@ -106,6 +107,7 @@ users/{uid}                     ← perfil de cada jugadora
     highScore, gamesPlayed, lastScore, lastGameAt
     claimedCount, lastClaim
     maxOrder        (escalón más alto reclamado en la escalera de recompensas)
+    heartsTotal, heartsGame (corazones recogidos en total; desbloquean personajes)
     createdAt
 
 games/{uid}_{número}            ← historial de partidas
@@ -139,6 +141,7 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 | Inventar una partida de 5.000 puntos | Tope por partida y límite de tiempo: deben haber pasado al menos 60 ms por cada punto desde la partida anterior (Coco tarda 140 ms por salto). Además cada partida debe registrarse en `games/`. |
 | Reclamar dos veces | `claims/{uid}_{rewardId}` no puede existir antes; nadie puede borrar ni editar reclamaciones. |
 | Reclamar una recompensa ya bloqueada | Escalera: sólo se puede reclamar una recompensa con `order` mayor que `maxOrder`, y `maxOrder` sólo sube al reclamar (nadie puede bajarlo). |
+| Inventar corazones para desbloquear personajes | Sólo se suman una vez por partida y nunca más de los posibles (cada corazón vale 3 puntos de esa partida). |
 | Pagar menos por una recompensa | La regla lee el costo **real** desde `rewards/{id}` y exige que el saldo baje exactamente eso, en la misma operación atómica. |
 | Saldo negativo / recompensa inactiva | Rechazado (`points >= 0`, `active == true`). |
 | Editar recompensas, costos o configuración | Sólo administradores. |
@@ -149,7 +152,7 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 
 > **Límite honesto:** en cualquier juego que corre en el navegador, alguien con conocimientos técnicos podría enviar una puntuación falsa *dentro de los límites* (máximo 5.000 por partida y no más rápido de lo humanamente posible). Las **recompensas** sí quedan 100 % protegidas: nunca se pueden reclamar dos veces, ni pagar menos, ni gastar puntos que no se tienen. El administrador puede revisar el historial de partidas y ajustar puntos si ve algo raro.
 
-Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (15 casos) — ver [Problemas frecuentes](#11-problemas-frecuentes) para ejecutarlas.
+Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (17 casos) — ver [Problemas frecuentes](#11-problemas-frecuentes) para ejecutarlas.
 
 ---
 
@@ -414,10 +417,21 @@ Para cargarlas: **Administración → Recompensas → "Cargar catálogo de 14 re
 - **Recompensas, costos, imágenes y mensajes:** desde el panel 🔐 Administración (no hace falta tocar código).
 - **Dificultad general:** Administración → Configuración → *Velocidad de los obstáculos*.
 - **Dar puntos de regalo:** Administración → Usuarios → *Ajustar puntos*.
-- **Personajes:** Coco es un Pomerania sable (como el de verdad); también hay Coco Crema y Coco Naranja. Para agregar otro, añade sus colores en `src/game/characters.ts`.
+- **Personajes:** se eligen en el menú. Los corazones ❤️ recogidos se suman para siempre (no se gastan) y desbloquean:
+
+  | Personaje | Raza | Corazones |
+  |---|---|---|
+  | Coco, Coco Crema, Coco Naranja | Pomerania | desde el inicio |
+  | Tony | Yorkshire | 10 |
+  | Jocko | Border Collie blue merle | 25 |
+  | Toby | Beagle | 45 |
+  | Cachetes José | Hámster ruso | 75 |
+
+  Los colores y requisitos están en `src/game/characters.ts`; el dibujo de cada raza, en `drawPet()` de `src/game/render.ts`.
 - **Puntos por nivel / nivel máximo:** `src/game/difficulty.ts`.
 - **Velocidades y topes de cada nivel, tipos de carril:** `src/game/generator.ts`.
 - **Puntos por corazón, duración del salto:** `src/game/types.ts`.
+- **La ola de corazones** (lo que persigue a Coco si se queda quieto): velocidad y topes en `updateChase()` de `src/game/Game.ts`.
 - **Nombre de la jugadora:** `src/config.ts`.
 
 ---

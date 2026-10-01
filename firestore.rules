@@ -15,6 +15,7 @@ rules_version = '2';
 //        Las recompensas son una ESCALERA: sólo se puede reclamar una
 //        recompensa con `order` MAYOR que la última reclamada (maxOrder);
 //        las anteriores no reclamadas quedan bloqueadas para siempre.
+//      * sumar los corazones de su última partida (para desbloquear personajes).
 //  - Nadie puede editar ni borrar reclamaciones.
 //  - Sólo un administrador (documento en /admins/{uid}, creado a mano
 //    desde la consola de Firebase) puede tocar recompensas y config.
@@ -119,6 +120,19 @@ service cloud.firestore {
         && after.maxOrder == get(rewardPath(rid)).data.order;
     }
 
+    // Corazones recogidos (para desbloquear personajes): una vez por partida
+    // y nunca más de los posibles (cada corazón vale 3 puntos de la partida).
+    function isHeartsUpdate() {
+      let before = resource.data;
+      let after = request.resource.data;
+      return after.diff(before).affectedKeys().hasOnly(['heartsTotal', 'heartsGame'])
+        && before.get('heartsGame', 0) < before.gamesPlayed
+        && after.heartsGame == before.gamesPlayed
+        && after.heartsTotal is int
+        && after.heartsTotal >= before.get('heartsTotal', 0)
+        && (after.heartsTotal - before.get('heartsTotal', 0)) * 3 <= before.lastScore;
+    }
+
     // El administrador puede regalar/ajustar puntos (y nada más).
     function isAdminPointsUpdate() {
       let after = request.resource.data;
@@ -134,7 +148,7 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if signedIn() && request.auth.uid == uid && validNewUser(uid);
       allow update: if signedIn() && (
-                      (request.auth.uid == uid && (isGameUpdate(uid) || isClaimUpdate(uid)))
+                      (request.auth.uid == uid && (isGameUpdate(uid) || isClaimUpdate(uid) || isHeartsUpdate()))
                       || isAdminPointsUpdate()
                     );
       allow delete: if false;

@@ -2,7 +2,9 @@ import {
   doc,
   getDoc,
   onSnapshot,
+  increment,
   runTransaction,
+  updateDoc,
   serverTimestamp,
   setDoc,
   type Unsubscribe,
@@ -63,13 +65,18 @@ export interface GameSubmitResult {
   previousHighScore: number;
   newRecord: boolean;
   profile: UserProfile;
+  /** Corazones totales antes de esta partida. */
+  heartsBefore: number;
+  /** false si no se pudieron guardar los corazones (p. ej. reglas sin actualizar). */
+  heartsSaved: boolean;
 }
 
 /**
  * Registra el final de una partida: suma la puntuación al saldo, actualiza el
- * récord y crea /games/{uid}_{n}. Las reglas de Firestore validan cada valor.
+ * récord y crea /games/{uid}_{n}. Luego suma los corazones recogidos.
+ * Las reglas de Firestore validan cada valor.
  */
-export async function submitGame(uid: string, score: number): Promise<GameSubmitResult> {
+export async function submitGame(uid: string, score: number, hearts = 0): Promise<GameSubmitResult> {
   const db = getDb();
   const userRef = doc(db, 'users', uid);
   const result = await runTransaction(db, async (tx) => {
@@ -96,10 +103,20 @@ export async function submitGame(uid: string, score: number): Promise<GameSubmit
       previousHighScore: u.highScore,
       newRecord: score > u.highScore,
       profile: { ...u, uid, highScore: Math.max(u.highScore, score), gamesPlayed },
+      heartsBefore: u.heartsTotal ?? 0,
+      heartsSaved: true,
     };
   });
   // El ranking se actualiza aparte: si fallara, la partida ya quedó guardada
   // y el ranking se corrige solo en el próximo inicio de sesión.
   void syncLeaderboard(result.profile).catch(() => undefined);
+  // Los corazones se guardan aparte: si fallara, la partida y los puntos ya están a salvo.
+  if (hearts > 0) {
+    try {
+      await updateDoc(userRef, { heartsTotal: increment(hearts), heartsGame: result.profile.gamesPlayed });
+    } catch {
+      result.heartsSaved = false;
+    }
+  }
   return result;
 }

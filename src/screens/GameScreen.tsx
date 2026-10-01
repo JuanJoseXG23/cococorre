@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Game } from '../game/Game';
-import { getSavedSkin } from '../game/characters';
+import { getSavedSkin, newlyUnlocked } from '../game/characters';
 import { isMuted, setMuted, sfx } from '../game/audio';
 import { MAX_LEVEL } from '../game/difficulty';
 import type { GameResult } from '../game/types';
@@ -25,8 +25,9 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
   const [toast, setToast] = useState<Toast | null>(null);
 
   const highScore = profile?.highScore ?? 0;
+  const heartsTotal = profile?.heartsTotal ?? 0;
   // Referencias para usar valores actuales dentro de los callbacks del motor.
-  const latest = useRef({ highScore, config, recordShown: false, onGameOver });
+  const latest = useRef({ highScore, heartsTotal, config, recordShown: false, onGameOver });
   latest.current.highScore = highScore;
   latest.current.config = config;
   latest.current.onGameOver = onGameOver;
@@ -35,7 +36,7 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
     const canvas = canvasRef.current!;
     const game = new Game(canvas, {
       speedMultiplier: config.speedMultiplier || 1,
-      skin: getSavedSkin(),
+      skin: getSavedSkin(heartsTotal),
       callbacks: {
         onScore: (s) => {
           setScore(s);
@@ -63,6 +64,16 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
               kind: 'level',
             },
           );
+        },
+        onHeart: (n) => {
+          // ¿Este corazón desbloquea un personaje?
+          const before = latest.current.heartsTotal;
+          const unlocked = newlyUnlocked(before + n - 1, before + n);
+          if (unlocked.length) {
+            sfx.milestone();
+            setToast({ id: Date.now(), text: `¡Desbloqueaste a ${unlocked[0].name}!
+${unlocked[0].breedLabel}`, kind: 'record' });
+          }
         },
         onGameOver: (r) => latest.current.onGameOver(r),
       },

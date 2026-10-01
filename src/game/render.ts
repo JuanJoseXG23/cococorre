@@ -1,5 +1,6 @@
 import type { Game } from './Game';
 import { COLS, type Lane, type Mover } from './types';
+import type { CharacterSkin } from './characters';
 
 export interface View {
   W: number;
@@ -373,6 +374,10 @@ function drawMover(ctx: CanvasRenderingContext2D, m: Mover, lane: Lane, top: num
   }
 }
 
+// =====================================================================
+//  Personajes (mascotas)
+// =====================================================================
+
 /** Círculo "peludo": un círculo con borde de mechones. */
 function fluff(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string, tufts = 10) {
   ctx.fillStyle = color;
@@ -387,37 +392,241 @@ function fluff(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number,
   }
 }
 
-function ellipse(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string) {
+function ellipse(ctx: CanvasRenderingContext2D, cx: number, cy: number, rx: number, ry: number, color: string, rot = 0) {
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.ellipse(cx, cy, rx, ry, rot, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function ear(ctx: CanvasRenderingContext2D, cx: number, baseY: number, w: number, h: number, outer: string, inner: string) {
+/** Oreja en punta (Pomerania, Yorkshire). `fold` dobla la punta (Border Collie). */
+function pointyEar(ctx: CanvasRenderingContext2D, cx: number, baseY: number, w: number, h: number, outer: string, inner: string, fold = 0) {
   ctx.fillStyle = outer;
   ctx.beginPath();
   ctx.moveTo(cx - w / 2, baseY);
-  ctx.lineTo(cx, baseY - h);
+  ctx.lineTo(cx + fold * w * 0.6, baseY - h);
   ctx.lineTo(cx + w / 2, baseY);
   ctx.closePath();
   ctx.fill();
   ctx.fillStyle = inner;
   ctx.beginPath();
-  ctx.moveTo(cx - w * 0.22, baseY - h * 0.1);
-  ctx.lineTo(cx, baseY - h * 0.72);
-  ctx.lineTo(cx + w * 0.22, baseY - h * 0.1);
+  ctx.moveTo(cx - w * 0.2, baseY - h * 0.1);
+  ctx.lineTo(cx + fold * w * 0.35, baseY - h * 0.65);
+  ctx.lineTo(cx + w * 0.2, baseY - h * 0.1);
   ctx.closePath();
   ctx.fill();
 }
 
+export interface PetPose {
+  facing: 'up' | 'down' | 'left' | 'right';
+  time: number;
+  /** Progreso del salto 0..1 o -1. */
+  hop: number;
+}
+
 /**
- * Coco: un Pomerania peludito (pelaje sable oscuro con marcas canela en
- * cara, pecho y patas, orejitas en punta y cola de plumero sobre el lomo).
+ * Dibuja una mascota parada sobre `groundY`, centrada en `cx`, con casilla de tamaño T.
+ * Todas comparten estructura (cola, patitas, cuerpo, cabeza, orejas, cara, collar)
+ * y cada raza cambia formas y marcas.
+ */
+export function drawPet(ctx: CanvasRenderingContext2D, s: CharacterSkin, cx: number, groundY: number, T: number, pose: PetPose) {
+  const f = pose.facing;
+  const side = f === 'left' ? -1 : f === 'right' ? 1 : 0;
+  const wag = Math.sin(pose.time * 12) * T * 0.025;
+  const b = s.breed;
+  const hamster = b === 'hamster';
+  const smooth = b === 'beagle' || b === 'collie';
+
+  // ---------- Hámster: una bolita con cachetes ----------
+  if (hamster) {
+    const by = groundY - T * 0.25;
+    // patitas rosadas
+    ellipse(ctx, cx - T * 0.1, groundY - T * 0.03, T * 0.05, T * 0.03, '#e8a6ae');
+    ellipse(ctx, cx + T * 0.1, groundY - T * 0.03, T * 0.05, T * 0.03, '#e8a6ae');
+    fluff(ctx, cx, by, T * 0.25, s.body, 14);
+    if (f === 'up') {
+      // raya oscura en el lomo
+      ellipse(ctx, cx, by - T * 0.02, T * 0.035, T * 0.2, s.bodyDark);
+      for (const o of [-0.13, 0.13]) {
+        ellipse(ctx, cx + o * T, by - T * 0.2, T * 0.055, T * 0.055, s.ears);
+      }
+      return;
+    }
+    const fx = cx + side * T * 0.08;
+    // barriguita café (abajo) y cachetes inflados a los lados de la cara
+    ellipse(ctx, fx, by + T * 0.15, T * 0.11, T * 0.07, s.belly);
+    const cheekXs = f === 'down' ? [fx - T * 0.17, fx + T * 0.17] : [fx + side * T * 0.13];
+    for (const chx of cheekXs) {
+      fluff(ctx, chx, by + T * 0.03, T * 0.075, s.accent, 7);
+      ellipse(ctx, chx, by + T * 0.04, T * 0.03, T * 0.02, 'rgba(240, 140, 160, 0.55)'); // rubor
+    }
+    // orejitas redondas
+    const earXs = f === 'down' ? [cx - T * 0.13, cx + T * 0.13] : [cx - side * T * 0.02, cx + side * T * 0.1];
+    for (const ex of earXs) {
+      ellipse(ctx, ex, by - T * 0.21, T * 0.055, T * 0.055, s.ears);
+      ellipse(ctx, ex, by - T * 0.21, T * 0.03, T * 0.03, '#e8a6ae');
+    }
+    // ojos grandes y brillantes
+    const eyeXs = f === 'down' ? [fx - T * 0.075, fx + T * 0.075] : [fx + side * T * 0.03];
+    for (const ex of eyeXs) {
+      ellipse(ctx, ex, by - T * 0.06, T * 0.038, T * 0.042, '#120c0c');
+      ellipse(ctx, ex + T * 0.012, by - T * 0.075, T * 0.013, T * 0.013, '#ffffff');
+    }
+    // naricita rosada y bigotes
+    const nx = fx + side * T * 0.12;
+    ellipse(ctx, nx, by + T * 0.0, T * 0.022, T * 0.017, '#e48b98');
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = Math.max(1, T * 0.012);
+    ctx.beginPath();
+    for (const d of f === 'down' ? [-1, 1] : [side]) {
+      ctx.moveTo(nx + d * T * 0.04, by + T * 0.01);
+      ctx.lineTo(nx + d * T * 0.15, by - T * 0.01);
+      ctx.moveTo(nx + d * T * 0.04, by + T * 0.025);
+      ctx.lineTo(nx + d * T * 0.15, by + T * 0.04);
+    }
+    ctx.stroke();
+    return;
+  }
+
+  // ---------- Perritos ----------
+  const bodyY = groundY - T * 0.24;
+  const headX = cx + side * T * 0.12;
+  const headY = f === 'up' ? groundY - T * 0.56 : f === 'down' ? groundY - T * 0.46 : groundY - T * 0.52;
+  const headColor = b === 'yorkie' ? s.belly : s.body; // el Yorkshire tiene la cabeza canela
+  const tailX = cx - side * T * 0.2 + wag;
+  const tailY = f === 'up' ? groundY - T * 0.3 : groundY - T * 0.44;
+
+  const drawTail = () => {
+    if (b === 'pomerania') {
+      fluff(ctx, tailX, tailY, T * 0.15, s.bodyDark, 8);
+      fluff(ctx, tailX, tailY - T * 0.02, T * 0.1, s.body, 7);
+    } else if (b === 'beagle') {
+      // cola levantada con la punta blanca
+      ellipse(ctx, tailX, tailY - T * 0.04, T * 0.035, T * 0.12, s.body, side * 0.4);
+      ellipse(ctx, tailX + side * -T * 0.02, tailY - T * 0.15, T * 0.035, T * 0.04, s.belly);
+    } else if (b === 'collie') {
+      // cola tupida y baja
+      ellipse(ctx, tailX, tailY + T * 0.12, T * 0.07, T * 0.13, s.bodyDark, -side * 0.6);
+      ellipse(ctx, tailX - side * T * 0.02, tailY + T * 0.22, T * 0.05, T * 0.05, s.belly);
+    } else {
+      // yorkie: colita corta
+      ellipse(ctx, tailX, tailY + T * 0.04, T * 0.04, T * 0.07, s.bodyDark);
+    }
+  };
+  if (f !== 'up') drawTail();
+
+  // Patitas
+  ellipse(ctx, cx - T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
+  ellipse(ctx, cx + T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
+
+  // Cuerpo
+  if (smooth) {
+    ellipse(ctx, cx, bodyY, T * 0.25, T * 0.21, s.body);
+  } else if (b === 'yorkie') {
+    // pelo largo y lacio que llega al suelo
+    ellipse(ctx, cx, bodyY - T * 0.02, T * 0.22, T * 0.18, s.body);
+    ctx.fillStyle = s.body;
+    roundRect(ctx, cx - T * 0.24, bodyY - T * 0.04, T * 0.48, T * 0.25, 6);
+    ctx.strokeStyle = s.bodyDark;
+    ctx.lineWidth = Math.max(1, T * 0.012);
+    ctx.beginPath();
+    for (let i = -3; i <= 3; i++) {
+      ctx.moveTo(cx + i * T * 0.06, bodyY);
+      ctx.lineTo(cx + i * T * 0.065, bodyY + T * 0.2);
+    }
+    ctx.stroke();
+  } else {
+    fluff(ctx, cx, bodyY, T * 0.24, s.body, 11);
+  }
+
+  // Marcas del cuerpo
+  if (b === 'beagle') ellipse(ctx, cx - side * T * 0.03, bodyY - T * 0.07, T * 0.2, T * 0.11, s.bodyDark); // manto negro
+  if (b === 'collie') {
+    for (const [dx, dy, r] of [[-0.12, -0.08, 0.07], [0.1, -0.02, 0.05], [0.02, 0.08, 0.045]] as const) {
+      ellipse(ctx, cx + dx * T, bodyY + dy * T, r * T, r * T * 0.8, s.bodyDark);
+    }
+  }
+  if (f !== 'up') {
+    ellipse(ctx, cx + side * T * 0.06, bodyY + T * 0.04, T * 0.12, T * 0.14, s.belly); // pecho
+  }
+  if (f === 'up') drawTail();
+
+  // Melena (Pomerania) o gola blanca (Collie)
+  if (b === 'pomerania') fluff(ctx, headX, headY + T * 0.04, T * 0.22, s.bodyDark, 12);
+  if (b === 'collie' && f !== 'up') fluff(ctx, headX, headY + T * 0.12, T * 0.15, s.belly, 9);
+
+  // Orejas paradas (antes de la cabeza)
+  const earOffsets = f === 'down' || f === 'up' ? [-0.11, 0.11] : side > 0 ? [-0.02, 0.13] : [-0.13, 0.02];
+  if (b === 'pomerania' || b === 'yorkie') {
+    for (const o of earOffsets) pointyEar(ctx, headX + o * T, headY - T * 0.1, T * 0.12, T * 0.15, s.ears, s.belly);
+  } else if (b === 'collie') {
+    for (const o of earOffsets) pointyEar(ctx, headX + o * T, headY - T * 0.09, T * 0.13, T * 0.13, s.ears, s.body, Math.sign(o) || 1);
+  }
+
+  // Cabeza
+  if (b === 'pomerania') fluff(ctx, headX, headY, T * 0.16, s.body, 9);
+  else if (b === 'yorkie') {
+    fluff(ctx, headX, headY, T * 0.15, headColor, 10);
+    // barbita de pelo largo
+    if (f !== 'up') ellipse(ctx, headX + side * T * 0.05, headY + T * 0.1, T * 0.1, T * 0.07, headColor);
+  } else ellipse(ctx, headX, headY, T * 0.165, T * 0.155, s.body);
+
+  // Marcas de la cabeza
+  if (b === 'collie') {
+    ellipse(ctx, headX - T * 0.07, headY - T * 0.05, T * 0.07, T * 0.06, s.bodyDark); // mancha merle
+    if (f !== 'up') ellipse(ctx, headX + side * T * 0.06, headY - T * 0.02, T * 0.025, T * 0.1, s.belly); // franja blanca
+  }
+  if (b === 'beagle' && f !== 'up') ellipse(ctx, headX + side * T * 0.06, headY - T * 0.03, T * 0.025, T * 0.09, s.belly);
+
+  // Orejas caídas (Beagle), encima de la cabeza
+  if (b === 'beagle') {
+    const flop = f === 'down' || f === 'up' ? [-0.15, 0.15] : [-side * 0.06];
+    for (const o of flop) ellipse(ctx, headX + o * T, headY + T * 0.04, T * 0.065, T * 0.13, s.ears, o * 1.5);
+  }
+
+  // Moñito del Yorkshire
+  if (b === 'yorkie') {
+    const bx = headX;
+    const byy = headY - T * 0.17;
+    ellipse(ctx, bx - T * 0.05, byy, T * 0.05, T * 0.035, s.accent, -0.4);
+    ellipse(ctx, bx + T * 0.05, byy, T * 0.05, T * 0.035, s.accent, 0.4);
+    ellipse(ctx, bx, byy, T * 0.025, T * 0.025, '#ffffff');
+  }
+
+  // Collar con corazoncito
+  ctx.fillStyle = s.collar;
+  roundRect(ctx, headX - T * 0.15, headY + T * 0.15, T * 0.3, T * 0.055, 3);
+  heartPath(ctx, headX, headY + T * 0.24, T * 0.08);
+  ctx.fill();
+
+  if (f === 'up') return;
+
+  // Cara
+  const fx = headX + side * T * 0.07;
+  if (b === 'pomerania') {
+    // cejitas canela
+    const browXs = f === 'down' ? [fx - T * 0.075, fx + T * 0.075] : [fx + side * T * 0.02];
+    for (const bx of browXs) ellipse(ctx, bx, headY - T * 0.07, T * 0.03, T * 0.02, s.belly);
+  }
+  // hocico
+  const muzzle = b === 'yorkie' ? '#e6bf8e' : s.belly;
+  ellipse(ctx, fx + side * T * 0.04, headY + T * 0.06, T * (smooth ? 0.1 : 0.09), T * 0.065, muzzle);
+  // ojos
+  const eyeXs = f === 'down' ? [fx - T * 0.07, fx + T * 0.07] : [fx + side * T * 0.01];
+  for (const ex of eyeXs) {
+    ellipse(ctx, ex, headY - T * 0.015, T * 0.032, T * 0.036, '#1e1416');
+    ellipse(ctx, ex + T * 0.01, headY - T * 0.03, T * 0.011, T * 0.011, '#ffffff');
+  }
+  // nariz y lengüita
+  ellipse(ctx, fx + side * T * 0.1, headY + T * 0.035, T * 0.032, T * 0.023, '#1e1416');
+  if (f === 'down') ellipse(ctx, fx, headY + T * 0.1, T * 0.025, T * 0.02, '#e88f9f');
+}
+
+/**
+ * La mascota dentro del juego: sombra, salto, aplastado y animaciones de muerte.
  */
 function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY: number, T: number, lift: number) {
   const p = game.player;
-  const s = game.skin;
   const top = centerY - T * 0.5;
   let squash = 1;
   let alpha = 1;
@@ -446,70 +655,7 @@ function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY:
   ctx.translate(cx, groundY - extraLift);
   ctx.scale(1.15, 1.15 * squash * stretch);
   ctx.translate(-cx, -groundY);
-
-  const f = p.facing;
-  const side = f === 'left' ? -1 : f === 'right' ? 1 : 0;
-  const wag = Math.sin(game.time * 12) * T * 0.025;
-
-  // Posiciones según hacia dónde mira
-  const bodyY = groundY - T * 0.24;
-  const headX = cx + side * T * 0.12;
-  const headY = f === 'up' ? groundY - T * 0.56 : f === 'down' ? groundY - T * 0.46 : groundY - T * 0.52;
-  const tailX = cx - side * T * 0.2 + wag;
-  const tailY = f === 'up' ? groundY - T * 0.3 : groundY - T * 0.44;
-
-  // Cola de plumero: detrás si mira hacia abajo o de lado; adelante si se aleja.
-  const drawTail = () => {
-    fluff(ctx, tailX, tailY, T * 0.15, s.bodyDark, 8);
-    fluff(ctx, tailX, tailY - T * 0.02, T * 0.1, s.body, 7);
-  };
-  if (f !== 'up') drawTail();
-
-  // Patitas canela
-  ellipse(ctx, cx - T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
-  ellipse(ctx, cx + T * 0.12, groundY - T * 0.04, T * 0.07, T * 0.05, s.belly);
-
-  // Cuerpo esponjoso
-  fluff(ctx, cx, bodyY, T * 0.24, s.body, 11);
-  if (f !== 'up') ellipse(ctx, cx + side * T * 0.06, bodyY + T * 0.04, T * 0.12, T * 0.14, s.belly); // pecho
-
-  if (f === 'up') drawTail();
-
-  // Melena (gola) alrededor de la cabeza
-  fluff(ctx, headX, headY + T * 0.04, T * 0.22, s.bodyDark, 12);
-
-  // Orejitas en punta
-  const earOffsets = f === 'down' || f === 'up' ? [-0.11, 0.11] : side > 0 ? [-0.02, 0.13] : [-0.13, 0.02];
-  for (const o of earOffsets) {
-    ear(ctx, headX + o * T, headY - T * 0.1, T * 0.12, T * 0.15, s.ears, s.belly);
-  }
-
-  // Cabeza
-  fluff(ctx, headX, headY, T * 0.16, s.body, 9);
-
-  // Collar con corazoncito
-  ctx.fillStyle = s.collar;
-  roundRect(ctx, headX - T * 0.15, headY + T * 0.15, T * 0.3, T * 0.055, 3);
-  heartPath(ctx, headX, headY + T * 0.24, T * 0.08);
-  ctx.fill();
-
-  if (f !== 'up') {
-    const fx = headX + side * T * 0.07; // centro de la cara
-    // Marcas canela: cejitas y hocico
-    const browXs = f === 'down' ? [fx - T * 0.075, fx + T * 0.075] : [fx + side * T * 0.02];
-    for (const bx of browXs) ellipse(ctx, bx, headY - T * 0.07, T * 0.03, T * 0.02, s.belly);
-    ellipse(ctx, fx + side * T * 0.04, headY + T * 0.06, T * 0.09, T * 0.065, s.belly);
-    // Ojos brillantes
-    const eyeXs = f === 'down' ? [fx - T * 0.07, fx + T * 0.07] : [fx + side * T * 0.01];
-    for (const ex of eyeXs) {
-      ellipse(ctx, ex, headY - T * 0.015, T * 0.032, T * 0.036, '#1e1416');
-      ellipse(ctx, ex + T * 0.01, headY - T * 0.03, T * 0.011, T * 0.011, '#ffffff');
-    }
-    // Naricita
-    ellipse(ctx, fx + side * T * 0.1, headY + T * 0.035, T * 0.03, T * 0.022, '#1e1416');
-    // Lengüita
-    if (f === 'down') ellipse(ctx, fx, headY + T * 0.1, T * 0.025, T * 0.02, '#e88f9f');
-  }
+  drawPet(ctx, game.skin, cx, groundY, T, { facing: p.facing, time: game.time, hop: p.hop });
   ctx.restore();
 
   // estrellitas al ser atropellado

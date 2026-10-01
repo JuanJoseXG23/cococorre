@@ -13,6 +13,8 @@ export interface GameCallbacks {
   onScore: (score: number) => void;
   /** Se llama al subir de nivel de dificultad. */
   onLevel?: (level: number) => void;
+  /** Se llama al recoger un corazón (con el total de la partida). */
+  onHeart?: (heartsThisGame: number) => void;
   onGameOver: (result: GameResult) => void;
 }
 
@@ -329,6 +331,7 @@ export class Game {
       this.spawn(p.x + 0.5, p.row, 10, 'heart', '#ff4f81');
       // Recoger un corazón empuja la ola hacia atrás.
       this.chaseRow -= 1.5;
+      this.opts.callbacks.onHeart?.(this.hearts);
       this.updateScore();
     }
   }

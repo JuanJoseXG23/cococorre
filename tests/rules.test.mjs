@@ -236,3 +236,20 @@ test('registro: el perfil se puede crear con o sin maxOrder (pero siempre en 0)'
   await assertSucceeds(setDoc(doc(ctx('nueva', 'Nueva'), 'users/nueva'), withoutMaxOrder));
   await assertSucceeds(setDoc(doc(ctx('otra', 'Otra'), 'users/otra'), newUser('Otra')));
 });
+
+test('corazones: sólo los posibles en la partida y una sola vez', async () => {
+  const db = ctx('mari', 'Mari');
+  const u = (await getDoc(doc(db, 'users/mari'))).data(); // última partida: 10 puntos
+  if (u.lastScore !== 10) throw new Error('lastScore esperado 10');
+  // 4 corazones = 12 puntos > 10: imposible
+  await assertFails(updateDoc(doc(db, 'users/mari'), { heartsTotal: 4, heartsGame: u.gamesPlayed }));
+  // marcar otra partida: no
+  await assertFails(updateDoc(doc(db, 'users/mari'), { heartsTotal: 1, heartsGame: u.gamesPlayed + 1 }));
+  // colar puntos junto con los corazones: no
+  await assertFails(updateDoc(doc(db, 'users/mari'), { heartsTotal: 1, heartsGame: u.gamesPlayed, points: 99999 }));
+  await assertSucceeds(updateDoc(doc(db, 'users/mari'), { heartsTotal: 3, heartsGame: u.gamesPlayed }));
+  // la misma partida otra vez: no
+  await assertFails(updateDoc(doc(db, 'users/mari'), { heartsTotal: 4, heartsGame: u.gamesPlayed }));
+  // nunca se puede bajar ni tocar los de otra persona
+  await assertFails(updateDoc(doc(ctx('bob', 'bob'), 'users/mari'), { heartsTotal: 100, heartsGame: 1 }));
+});

@@ -5,6 +5,7 @@ import type { Claim, Reward } from '../firebase/types';
 import { BackIcon, WhatsAppIcon } from '../components/Icons';
 import { shareOnWhatsApp } from '../rewards/share';
 import { CocoFace } from '../components/Logo';
+import { CHARACTERS, isUnlocked } from '../game/characters';
 import type { Nav } from '../App';
 
 export function formatDate(ts: { toDate: () => Date } | null | undefined): string {
@@ -45,6 +46,13 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
             <div className="stat"><div className="label">Récord</div><div className="value">{profile?.highScore ?? 0}</div></div>
             <div className="stat"><div className="label">Partidas</div><div className="value">{profile?.gamesPlayed ?? 0}</div></div>
             <div className="stat"><div className="label">Recompensas</div><div className="value">{claims.length}/{total}</div></div>
+            <div className="stat"><div className="label">Corazones</div><div className="value">{profile?.heartsTotal ?? 0}</div></div>
+            <div className="stat">
+              <div className="label">Personajes</div>
+              <div className="value">
+                {CHARACTERS.filter((c) => isUnlocked(c, profile?.heartsTotal ?? 0)).length}/{CHARACTERS.length}
+              </div>
+            </div>
           </div>
         </div>
 
