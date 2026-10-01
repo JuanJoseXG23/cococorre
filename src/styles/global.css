@@ -112,6 +112,7 @@ button, input, textarea, select { font-family: inherit; font-size: inherit; colo
 .btn.lilac { --c: var(--lilac); --d: var(--lilac-dark); }
 .btn.ghost { --c: #ffffff; --d: #e6e0e6; color: var(--ink); border: 1px solid var(--line); }
 .btn.danger { --c: var(--danger); --d: #b4504f; }
+.btn.whatsapp { --c: #3fae6b; --d: #2f8a53; }
 
 .icon-btn {
   appearance: none;

@@ -4,7 +4,8 @@ import { claimReward, watchMyClaims, watchRewards } from '../firebase/rewards';
 import { friendlyError } from '../firebase/errors';
 import { DIFFICULTY_LABELS, type Claim, type Reward } from '../firebase/types';
 import { Confetti, Loading } from '../components/Decorations';
-import { BackIcon } from '../components/Icons';
+import { BackIcon, WhatsAppIcon } from '../components/Icons';
+import { shareOnWhatsApp } from './share';
 import { Modal } from '../components/Modal';
 import { RewardImage } from '../components/RewardImage';
 import type { Nav } from '../App';
@@ -165,7 +166,14 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
                 Esta recompensa es válida para:<br />
                 <strong>una persona muy especial</strong>
               </div>
-              <button className="btn block" style={{ marginTop: 16 }} onClick={() => setCelebrate(null)}>
+              <button
+                className="btn whatsapp block"
+                style={{ marginTop: 16 }}
+                onClick={() => shareOnWhatsApp(celebrate.name, celebrate.image)}
+              >
+                <WhatsAppIcon /> Compartir por WhatsApp
+              </button>
+              <button className="btn ghost block" style={{ marginTop: 10 }} onClick={() => setCelebrate(null)}>
                 Gracias
               </button>
             </div>

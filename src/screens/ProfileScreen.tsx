@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { watchMyClaims, watchRewards } from '../firebase/rewards';
 import type { Claim, Reward } from '../firebase/types';
-import { BackIcon } from '../components/Icons';
+import { BackIcon, WhatsAppIcon } from '../components/Icons';
+import { shareOnWhatsApp } from '../rewards/share';
 import { CocoFace } from '../components/Logo';
 import type { Nav } from '../App';
 
@@ -59,6 +60,13 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
                   <div className="muted" style={{ fontSize: '0.9rem' }}>{formatDate(c.claimedAt)}</div>
                 </div>
                 <span className="claimed-tag">Reclamada ✓</span>
+                <button
+                  className="btn whatsapp small"
+                  onClick={() => shareOnWhatsApp(c.rewardName, rewards.find((r) => r.id === c.rewardId)?.image)}
+                  aria-label={`Compartir ${c.rewardName} por WhatsApp`}
+                >
+                  <WhatsAppIcon /> Compartir
+                </button>
               </div>
             ))}
         </div>
