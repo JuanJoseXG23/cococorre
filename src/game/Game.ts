@@ -1,5 +1,6 @@
 import { attachInput } from './input';
-import { difficultyAt, LaneGenerator } from './generator';
+import { LaneGenerator } from './generator';
+import { difficultyForScore, levelForScore } from './difficulty';
 import { drawScene, type View } from './render';
 import { sfx } from './audio';
 import type { CharacterSkin } from './characters';
@@ -10,6 +11,8 @@ import {
 
 export interface GameCallbacks {
   onScore: (score: number) => void;
+  /** Se llama al subir de nivel de dificultad. */
+  onLevel?: (level: number) => void;
   onGameOver: (result: GameResult) => void;
 }
 
@@ -69,6 +72,7 @@ export class Game {
   score = 0;
   maxRow = 0;
   hearts = 0;
+  level = 1;
   alive = true;
   started = false;
 
@@ -89,7 +93,7 @@ export class Game {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D no disponible');
     this.ctx = ctx;
-    this.generator = new LaneGenerator(opts.speedMultiplier);
+    this.generator = new LaneGenerator(opts.speedMultiplier, (row) => row + this.hearts * HEART_BONUS);
     this.ensureLanes();
     this.detachInput = attachInput(canvas, (d) => this.move(d));
     this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -342,8 +346,8 @@ export class Game {
   private updateCamera(dt: number) {
     const p = this.player;
     if (this.started && this.alive) {
-      const d = difficultyAt(this.maxRow);
-      this.camRow += (0.22 + 0.5 * d) * dt;
+      // Tope: la cámara nunca avanza a más de 0,6 filas por segundo.
+      this.camRow += (0.22 + 0.38 * difficultyForScore(this.score)) * dt;
     }
     if (p.row > this.camRow) this.camRow += (p.row - this.camRow) * Math.min(1, dt * 6);
     const rowsBelow = (this.view.H - this.view.baseY) / this.view.T;
@@ -355,6 +359,11 @@ export class Game {
     if (s !== this.score) {
       this.score = s;
       this.opts.callbacks.onScore(s);
+      const lvl = levelForScore(s);
+      if (lvl !== this.level) {
+        this.level = lvl;
+        this.opts.callbacks.onLevel?.(lvl);
+      }
     }
   }
 

@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { login, register, validatePassword, validateUsername } from '../firebase/auth';
 import { friendlyError } from '../firebase/errors';
 import { Logo } from '../components/Logo';
-import { HeartsBackground } from '../components/Decorations';
 
 type Mode = 'login' | 'register';
 
@@ -45,7 +44,6 @@ export function AuthScreen() {
 
   return (
     <div className="screen">
-      <HeartsBackground />
       <div className="content">
         <Logo />
         <div className="card">
@@ -99,7 +97,7 @@ export function AuthScreen() {
             )}
             {error && <div className="error" role="alert">{error}</div>}
             <button className="btn big block" type="submit" disabled={busy}>
-              {busy ? 'Un momento...' : mode === 'login' ? '🐾 Iniciar sesión' : '💖 Crear cuenta'}
+              {busy ? 'Un momento...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
             </button>
           </form>
         </div>

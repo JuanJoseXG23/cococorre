@@ -2,10 +2,11 @@
 
 Un juego arcade hecho con amor para **María Isabel**: ayuda a **Coco** a cruzar calles, ríos y vías de tren, gana puntos y cámbialos por recompensas reales (abrazos, besos, Nucitas…).
 
-- 🕹️ Juego infinito generado por carriles, con dificultad progresiva.
+- 🕹️ Juego infinito generado por carriles, con 10 niveles de dificultad según los puntos.
 - 🔐 Cuentas con usuario y contraseña (Firebase Authentication).
 - 🪙 Los puntos de cada partida se suman a un saldo guardado en Firestore.
 - 🎁 Recompensas que se reclaman **una sola vez**, validado por las reglas de Firebase.
+- 🏅 Ranking global con los récords de todas las jugadoras.
 - 🔧 Panel de administración: usuarios, recompensas, historial y configuración.
 - 🌐 Se publica gratis en **GitHub Pages**, con Firebase como backend (plan gratuito *Spark*).
 
@@ -114,6 +115,9 @@ rewards/{rewardId}              ← creadas por el administrador
 claims/{uid}_{rewardId}         ← reclamaciones (permanentes)
     userId, username, rewardId, rewardName, cost, claimedAt
 
+leaderboard/{uid}               ← ranking público (copia del récord)
+    username, highScore, gamesPlayed, updatedAt
+
 admins/{uid}                    ← sólo se crea desde la consola de Firebase
 config/game                     ← mensajes y dificultad (editable por admin)
 ```
@@ -136,12 +140,13 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 | Saldo negativo / recompensa inactiva | Rechazado (`points >= 0`, `active == true`). |
 | Editar recompensas, costos o configuración | Sólo administradores. |
 | Ver o modificar a otros usuarios | Cada quien sólo lee su propio perfil y sus reclamaciones. |
+| Inflar su puesto en el ranking | `leaderboard/{uid}` sólo acepta valores **idénticos** al récord y partidas del perfil protegido, y cada quien sólo escribe su propia entrada. El ranking sólo muestra usuario, récord y partidas (nunca el saldo). |
 | Hacerse administrador / entrar a `#admin` | Ser admin = existir en `admins/{uid}`, que **sólo** se puede crear desde la consola de Firebase (`allow write: if false`). Ocultar el botón en la interfaz es comodidad; la protección real es la regla. |
 | Ponerse puntos al crear la cuenta | El perfil sólo puede crearse con todo en 0 y con el usuario que coincide con la cuenta. |
 
 > **Límite honesto:** en cualquier juego que corre en el navegador, alguien con conocimientos técnicos podría enviar una puntuación falsa *dentro de los límites* (máximo 5.000 por partida y no más rápido de lo humanamente posible). Las **recompensas** sí quedan 100 % protegidas: nunca se pueden reclamar dos veces, ni pagar menos, ni gastar puntos que no se tienen. El administrador puede revisar el historial de partidas y ajustar puntos si ve algo raro.
 
-Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (12 casos de ataque) — ver [Problemas frecuentes](#10-problemas-frecuentes) para ejecutarlas.
+Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (14 casos) — ver [Problemas frecuentes](#10-problemas-frecuentes) para ejecutarlas.
 
 ---
 
@@ -156,7 +161,16 @@ Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (12 casos de 
 - **+1 punto** por cada fila nueva alcanzada, **+3** por cada ❤️ recogido.
 - Carreteras 🚗, ríos 🌊 (hay que saltar sobre troncos u hojas), vías de tren 🚆 (el semáforo parpadea antes de que pase el tren).
 - Si Coco se queda muy atrás, la cámara lo deja… ¡hay que seguir avanzando!
-- La dificultad sube con la distancia: autos más rápidos y frecuentes, menos zonas seguras, troncos más cortos y más trenes.
+- **La dificultad sube con los puntos:** cada 30 puntos se sube un nivel (se ve en pantalla), hasta el nivel 10 (270 puntos). Desde ahí ya no sube más, para que nunca sea imposible:
+
+  | Puntos | Nivel | Velocidad autos (casillas/s) | Hueco mínimo entre autos | Avance de la cámara |
+  |---|---|---|---|---|
+  | 0 | 1 | 1,1 – 2,0 | 5 casillas | 0,22 filas/s |
+  | 90 | 4 | 2,1 – 3,0 | 4,1 | 0,35 |
+  | 150 | 6 | 2,8 – 3,7 | 3,4 | 0,43 |
+  | 270+ | 10 (máx.) | 4,1 – 5,0 | 2,2 | 0,60 |
+
+  Además: menos zonas seguras (pero al menos 45 % de las veces hay una tras un tramo peligroso), más camiones, ríos más rápidos (troncos de mínimo 2 casillas) y trenes más frecuentes (siempre con aviso del semáforo). Todo se ajusta en `src/game/difficulty.ts` y `src/game/generator.ts`.
 - Al morir, la puntuación se suma automáticamente al saldo.
 
 ---
@@ -379,7 +393,8 @@ El administrador se crea a mano desde la consola de Firebase: así **nadie** pue
 - **Dificultad general:** Administración → Configuración → *Velocidad de los obstáculos*.
 - **Dar puntos de regalo:** Administración → Usuarios → *Ajustar puntos*.
 - **Nuevo personaje:** agrega una entrada en `src/game/characters.ts` (colores del perrito).
-- **Curva de dificultad / tipos de carril:** `src/game/generator.ts`.
+- **Puntos por nivel / nivel máximo:** `src/game/difficulty.ts`.
+- **Velocidades y topes de cada nivel, tipos de carril:** `src/game/generator.ts`.
 - **Puntos por corazón, duración del salto:** `src/game/types.ts`.
 - **Nombre de la jugadora:** `src/config.ts`.
 
@@ -398,6 +413,8 @@ El administrador se crea a mano desde la consola de Firebase: así **nadie** pue
 **El workflow falla en `npm ci`** → asegúrate de haber subido `package-lock.json`.
 
 **Página en blanco / 404 en GitHub Pages** → en Settings → Pages la fuente debe ser **GitHub Actions** (Paso 9).
+
+**El ranking aparece vacío o no se actualiza** → vuelve a publicar `firestore.rules` (Paso 5): la regla de `leaderboard` se agregó después. Cada jugadora aparece al iniciar sesión o terminar una partida.
 
 **Ejecutar las pruebas de las reglas (opcional, requiere Java 21+):**
 ```bash

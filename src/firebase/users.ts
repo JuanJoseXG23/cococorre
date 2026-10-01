@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { getDb } from './app';
 import type { UserProfile } from './types';
+import { syncLeaderboard } from './leaderboard';
 
 function toProfile(uid: string, data: Record<string, unknown>): UserProfile {
   return { uid, ...(data as Omit<UserProfile, 'uid'>) };
@@ -57,6 +58,7 @@ export interface GameSubmitResult {
   newPoints: number;
   previousHighScore: number;
   newRecord: boolean;
+  profile: UserProfile;
 }
 
 /**
@@ -66,7 +68,7 @@ export interface GameSubmitResult {
 export async function submitGame(uid: string, score: number): Promise<GameSubmitResult> {
   const db = getDb();
   const userRef = doc(db, 'users', uid);
-  return runTransaction(db, async (tx) => {
+  const result = await runTransaction(db, async (tx) => {
     const snap = await tx.get(userRef);
     if (!snap.exists()) throw new Error('No se encontró tu perfil.');
     const u = snap.data() as UserProfile;
@@ -89,6 +91,11 @@ export async function submitGame(uid: string, score: number): Promise<GameSubmit
       newPoints: u.points + score,
       previousHighScore: u.highScore,
       newRecord: score > u.highScore,
+      profile: { ...u, uid, highScore: Math.max(u.highScore, score), gamesPlayed },
     };
   });
+  // El ranking se actualiza aparte: si fallara, la partida ya quedó guardada
+  // y el ranking se corrige solo en el próximo inicio de sesión.
+  void syncLeaderboard(result.profile).catch(() => undefined);
+  return result;
 }

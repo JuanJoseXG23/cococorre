@@ -2,13 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { Game } from '../game/Game';
 import { getSavedSkin } from '../game/characters';
 import { isMuted, setMuted, sfx } from '../game/audio';
+import { MAX_LEVEL } from '../game/difficulty';
 import type { GameResult } from '../game/types';
 import { useAuth } from '../auth/AuthContext';
+import { PauseIcon, SoundIcon } from '../components/Icons';
 
 interface Toast {
   id: number;
   text: string;
-  record?: boolean;
+  kind?: 'record' | 'level';
 }
 
 export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult) => void; onExit: () => void }) {
@@ -16,6 +18,7 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<Game | null>(null);
   const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [showHint, setShowHint] = useState(true);
@@ -41,7 +44,7 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
           if (!l.recordShown && l.highScore > 0 && s > l.highScore) {
             l.recordShown = true;
             sfx.milestone();
-            setToast({ id: Date.now(), text: `✨ ¡NUEVO RÉCORD! ✨\n${l.config.recordMessage}`, record: true });
+            setToast({ id: Date.now(), text: `Nuevo récord\n${l.config.recordMessage}`, kind: 'record' });
           } else if (l.config.milestoneEvery > 0 && s > 0 && s % l.config.milestoneEvery === 0) {
             const msgs = l.config.milestoneMessages;
             if (msgs.length) {
@@ -50,6 +53,16 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
               setToast({ id: Date.now(), text: msgs[idx] });
             }
           }
+        },
+        onLevel: (lvl) => {
+          setLevel(lvl);
+          setToast((t) =>
+            t?.kind === 'record' ? t : {
+              id: Date.now(),
+              text: lvl === MAX_LEVEL ? `Nivel ${lvl} · máximo` : `Nivel ${lvl}`,
+              kind: 'level',
+            },
+          );
         },
         onGameOver: (r) => latest.current.onGameOver(r),
       },
@@ -99,30 +112,33 @@ export function GameScreen({ onGameOver, onExit }: { onGameOver: (r: GameResult)
       <div className="hud">
         <div className="hud-score">
           <div className="points">PUNTOS: {score}</div>
-          <div className="record">🏆 RÉCORD: {Math.max(highScore, score)}</div>
+          <div className="record">RÉCORD: {Math.max(highScore, score)}</div>
+          <span className="level-tag">Nivel {level}</span>
         </div>
         <div className="hud-actions">
-          <button className="icon-btn" onClick={toggleMute} aria-label="Sonido">{muted ? '🔇' : '🔊'}</button>
-          <button className="icon-btn" onClick={togglePause} aria-label="Pausa">⏸</button>
+          <button className="icon-btn" onClick={toggleMute} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>
+            <SoundIcon muted={muted} />
+          </button>
+          <button className="icon-btn" onClick={togglePause} aria-label="Pausa"><PauseIcon /></button>
         </div>
       </div>
       {showHint && (
         <div className="hint">
-          {isTouch ? '👆 Toca para avanzar · desliza para moverte' : '⬆️⬇️⬅️➡️ o WASD para mover a Coco'}
+          {isTouch ? 'Toca para avanzar · desliza para moverte' : 'Usa las flechas o WASD para mover a Coco'}
         </div>
       )}
       {toast && (
-        <div key={toast.id} className={`toast ${toast.record ? 'record' : ''}`} style={{ whiteSpace: 'pre-line' }}>
+        <div key={toast.id} className={`toast ${toast.kind ?? ''}`} style={{ whiteSpace: 'pre-line' }}>
           {toast.text}
         </div>
       )}
       {paused && (
         <div className="pause-overlay">
           <div className="card center" style={{ width: '100%', maxWidth: 340 }}>
-            <h2>⏸ Pausa</h2>
-            <p className="muted">Coco te espera 🐶</p>
+            <h2>En pausa</h2>
+            <p className="muted">Coco te espera.</p>
             <div className="menu-buttons">
-              <button className="btn big block" onClick={togglePause}>▶ Continuar</button>
+              <button className="btn big block" onClick={togglePause}>Continuar</button>
               <button className="btn ghost block" onClick={onExit}>Salir al menú</button>
             </div>
             <p className="muted" style={{ fontSize: '0.85rem', marginBottom: 0 }}>

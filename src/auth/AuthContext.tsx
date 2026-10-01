@@ -3,6 +3,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { getAuthOrThrow } from '../firebase/app';
 import { checkIsAdmin, watchUserProfile } from '../firebase/users';
 import { loadGameConfig } from '../firebase/gameConfig';
+import { syncLeaderboard } from '../firebase/leaderboard';
 import { DEFAULT_CONFIG, type GameConfig, type UserProfile } from '../firebase/types';
 
 interface AuthState {
@@ -42,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (first && p) {
         first = false;
         setLoading(false);
+        // Asegura que todas las jugadoras registradas aparezcan en el ranking.
+        void syncLeaderboard(p).catch(() => undefined);
       }
     });
     // Si el perfil tarda (registro en curso), no bloquear para siempre.

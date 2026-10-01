@@ -177,3 +177,30 @@ test('nadie puede hacerse administrador desde el navegador', async () => {
   await assertFails(setDoc(doc(ctx('mari', 'Mari'), 'config/game'), { speedMultiplier: 0.1 }));
   await assertSucceeds(setDoc(doc(ctx('boss', 'boss'), 'config/game'), { speedMultiplier: 1 }));
 });
+
+test('ranking: sólo se puede publicar el récord real', async () => {
+  const db = ctx('mari', 'Mari');
+  const lb = (data) => setDoc(doc(db, 'leaderboard/mari'), { updatedAt: serverTimestamp(), ...data });
+  const real = (await getDoc(doc(db, 'users/mari'))).data();
+  await assertFails(lb({ username: 'Mari', highScore: 99999, gamesPlayed: real.gamesPlayed }));
+  await assertFails(lb({ username: 'Otra', highScore: real.highScore, gamesPlayed: real.gamesPlayed }));
+  await assertFails(lb({ username: 'Mari', highScore: real.highScore, gamesPlayed: real.gamesPlayed, extra: 1 }));
+  await assertSucceeds(lb({ username: 'Mari', highScore: real.highScore, gamesPlayed: real.gamesPlayed }));
+  // nadie escribe la entrada de otra persona
+  await assertFails(setDoc(doc(ctx('bob', 'bob'), 'leaderboard/mari'), {
+    username: 'Mari', highScore: real.highScore, gamesPlayed: real.gamesPlayed, updatedAt: serverTimestamp(),
+  }));
+  // todas las jugadoras pueden ver el ranking; sin sesión, no
+  await assertSucceeds(getDocs(collection(ctx('bob', 'bob'), 'leaderboard')));
+  await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), 'leaderboard')));
+});
+
+test('ranking: se actualiza junto con la partida', async () => {
+  await sleep(800);
+  const db = ctx('bob', 'bob');
+  const b = writeBatch(db);
+  b.update(doc(db, 'users/bob'), { points: 7, highScore: 7, gamesPlayed: 1, lastScore: 7, lastGameAt: serverTimestamp() });
+  b.set(doc(db, 'games/bob_1'), { userId: 'bob', username: 'bob', score: 7, playedAt: serverTimestamp() });
+  b.set(doc(db, 'leaderboard/bob'), { username: 'bob', highScore: 7, gamesPlayed: 1, updatedAt: serverTimestamp() });
+  await assertSucceeds(b.commit());
+});

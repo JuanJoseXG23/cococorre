@@ -7,14 +7,15 @@ import { GameOverScreen } from './screens/GameOverScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
 import { RewardsScreen } from './rewards/RewardsScreen';
 import { AdminScreen } from './admin/AdminScreen';
-import { HeartsBackground, Loading } from './components/Decorations';
+import { LeaderboardScreen } from './screens/LeaderboardScreen';
+import { Loading } from './components/Decorations';
 import { Logo } from './components/Logo';
 import type { GameResult } from './game/types';
 
-export type Screen = 'menu' | 'game' | 'gameover' | 'rewards' | 'profile' | 'admin';
+export type Screen = 'menu' | 'game' | 'gameover' | 'rewards' | 'ranking' | 'profile' | 'admin';
 export type Nav = (s: Screen) => void;
 
-const HASHABLE: Screen[] = ['menu', 'rewards', 'profile', 'admin'];
+const HASHABLE: Screen[] = ['menu', 'rewards', 'ranking', 'profile', 'admin'];
 
 export function App() {
   const { user, profile, loading } = useAuth();
@@ -47,7 +48,6 @@ export function App() {
   if (loading) {
     return (
       <div className="screen">
-        <HeartsBackground />
         <div className="content"><Logo /><Loading /></div>
       </div>
     );
@@ -77,6 +77,8 @@ export function App() {
       return result ? <GameOverScreen result={result} nav={nav} onPlayAgain={() => nav('game')} /> : <MenuScreen nav={nav} />;
     case 'rewards':
       return <RewardsScreen nav={nav} />;
+    case 'ranking':
+      return <LeaderboardScreen nav={nav} />;
     case 'profile':
       return <ProfileScreen nav={nav} />;
     case 'admin':

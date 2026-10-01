@@ -56,7 +56,7 @@ function heartPath(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: num
 export function drawScene(ctx: CanvasRenderingContext2D, game: Game, v: View) {
   const { W, H, T, dpr } = v;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#8fd66e';
+  ctx.fillStyle = '#a3d68a';
   ctx.fillRect(0, 0, W, H);
 
   const rowTop = (r: number) => v.baseY - (r - game.camRow + 0.5) * T;
@@ -125,12 +125,12 @@ function drawGround(ctx: CanvasRenderingContext2D, lane: Lane, top: number, v: V
   const { W, T, offsetX } = v;
   switch (lane.type) {
     case 'grass': {
-      ctx.fillStyle = lane.row % 2 === 0 ? '#9be07a' : '#8fd66e';
+      ctx.fillStyle = lane.row % 2 === 0 ? '#acdc94' : '#a3d68a';
       ctx.fillRect(0, top, W, T + 1);
       break;
     }
     case 'road': {
-      ctx.fillStyle = '#5d6170';
+      ctx.fillStyle = '#686c79';
       ctx.fillRect(0, top, W, T + 1);
       if (below?.type === 'road') {
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -143,7 +143,7 @@ function drawGround(ctx: CanvasRenderingContext2D, lane: Lane, top: number, v: V
       break;
     }
     case 'river': {
-      ctx.fillStyle = '#5ec4f0';
+      ctx.fillStyle = '#82c8e6';
       ctx.fillRect(0, top, W, T + 1);
       ctx.fillStyle = 'rgba(255,255,255,0.35)';
       const shift = ((time * 0.6 * (lane.dir || 1) * T) % (T * 2) + T * 2) % (T * 2);
@@ -220,8 +220,8 @@ function drawLaneObjects(ctx: CanvasRenderingContext2D, lane: Lane, top: number,
 function drawTree(ctx: CanvasRenderingContext2D, x: number, top: number, T: number, seed: number) {
   const tall = seed % 3 === 0;
   shadow(ctx, x + T * 0.5, top + T * 0.72, T * 0.4, T * 0.14);
-  block(ctx, x + T * 0.38, top + T * 0.45, T * 0.24, T * 0.25, T * 0.3, '#8d5a35', 2);
-  const leaf = tall ? '#43a047' : '#5cb85c';
+  block(ctx, x + T * 0.38, top + T * 0.45, T * 0.24, T * 0.25, T * 0.3, '#a07a5c', 2);
+  const leaf = tall ? '#6fae74' : '#86c287';
   block(ctx, x + T * 0.1, top + T * 0.18, T * 0.8, T * 0.6, T * (tall ? 0.95 : 0.7), leaf, 5);
   ctx.fillStyle = 'rgba(255,255,255,0.15)';
   roundRect(ctx, x + T * 0.18, top + T * 0.18 - T * (tall ? 0.95 : 0.7) + T * 0.06, T * 0.3, T * 0.18, 3);
@@ -389,11 +389,12 @@ function drawCoco(ctx: CanvasRenderingContext2D, game: Game, x: number, centerY:
 
   // estrellitas al ser atropellado
   if (!game.alive && (p.cause === 'car' || p.cause === 'train') && p.deadFor < 1.4) {
-    ctx.fillStyle = '#ffd54f';
+    ctx.fillStyle = '#f2d17a';
     for (let i = 0; i < 3; i++) {
       const a = game.time * 4 + (i * Math.PI * 2) / 3;
-      ctx.font = `${T * 0.3}px sans-serif`;
-      ctx.fillText('⭐', x + T * 0.4 + Math.cos(a) * T * 0.35, top + T * 0.3 + Math.sin(a) * T * 0.12);
+      ctx.beginPath();
+      ctx.arc(x + T * 0.5 + Math.cos(a) * T * 0.35, top + T * 0.2 + Math.sin(a) * T * 0.12, T * 0.06, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 }

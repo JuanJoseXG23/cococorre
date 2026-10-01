@@ -151,6 +151,22 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- Ranking global ----------
+    // Copia pública (sólo usuario, récord y partidas) del perfil privado.
+    // Los valores deben coincidir EXACTAMENTE con users/{uid}, que ya está
+    // protegido; así nadie puede inflar su puesto en el ranking.
+    match /leaderboard/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['username', 'highScore', 'gamesPlayed', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['username', 'highScore', 'gamesPlayed', 'updatedAt'])
+        && request.resource.data.username == getAfter(userPath(uid)).data.username
+        && request.resource.data.highScore == getAfter(userPath(uid)).data.highScore
+        && request.resource.data.gamesPlayed == getAfter(userPath(uid)).data.gamesPlayed
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+
     // ---------- Recompensas ----------
     function validReward() {
       let d = request.resource.data;

@@ -1,48 +1,17 @@
 import { useMemo } from 'react';
 
-const ICONS = ['❤️', '💕', '⭐', '💖', '🐾', '✨'];
+const COLORS = ['#d4849a', '#ecd3a8', '#8fb8a4', '#96b8d2', '#ab9fcb'];
 
-/** Corazones y estrellas que flotan en el fondo de los menús. */
-export function HeartsBackground() {
-  const items = useMemo(
-    () =>
-      Array.from({ length: 14 }, (_, i) => ({
-        icon: ICONS[i % ICONS.length],
-        left: Math.random() * 100,
-        duration: 12 + Math.random() * 14,
-        delay: -Math.random() * 20,
-        size: 16 + Math.random() * 18,
-      })),
-    [],
-  );
-  return (
-    <div className="hearts-bg" aria-hidden>
-      {items.map((h, i) => (
-        <span
-          key={i}
-          style={{
-            left: `${h.left}%`,
-            animationDuration: `${h.duration}s`,
-            animationDelay: `${h.delay}s`,
-            fontSize: h.size,
-          }}
-        >
-          {h.icon}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/** Lluvia de confeti y corazones para celebrar. */
-export function Confetti({ count = 40 }: { count?: number }) {
+/** Confeti suave de puntos de colores para celebrar. */
+export function Confetti({ count = 30 }: { count?: number }) {
   const items = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
-        icon: ['❤️', '🎉', '⭐', '💖', '🎊', '💕'][i % 6],
+        color: COLORS[i % COLORS.length],
         left: Math.random() * 100,
-        duration: 2.2 + Math.random() * 2.2,
+        duration: 3 + Math.random() * 2.5,
         delay: Math.random() * 0.8,
+        size: 6 + Math.random() * 6,
       })),
     [count],
   );
@@ -51,10 +20,15 @@ export function Confetti({ count = 40 }: { count?: number }) {
       {items.map((c, i) => (
         <span
           key={i}
-          style={{ left: `${c.left}%`, animationDuration: `${c.duration}s`, animationDelay: `${c.delay}s` }}
-        >
-          {c.icon}
-        </span>
+          style={{
+            left: `${c.left}%`,
+            background: c.color,
+            width: c.size,
+            height: c.size,
+            animationDuration: `${c.duration}s`,
+            animationDelay: `${c.delay}s`,
+          }}
+        />
       ))}
     </div>
   );

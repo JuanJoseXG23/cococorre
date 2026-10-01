@@ -27,8 +27,8 @@ export function AdminHistory() {
     <>
       <div className="card">
         <div className="topbar" style={{ marginBottom: 8 }}>
-          <h2 style={{ margin: 0 }}>📜 Reclamaciones</h2>
-          <button className="btn ghost small" onClick={load}>🔄 Actualizar</button>
+          <h2 style={{ margin: 0 }}>Reclamaciones</h2>
+          <button className="btn ghost small" onClick={load}>Actualizar</button>
         </div>
         {error && <div className="error">{error}</div>}
         {!claims && !error && <Loading />}
@@ -42,7 +42,7 @@ export function AdminHistory() {
                   <tr key={c.id}>
                     <td><strong>{c.username}</strong></td>
                     <td>{c.rewardName}</td>
-                    <td>🪙 {c.cost}</td>
+                    <td>{c.cost}</td>
                     <td>{date(c.claimedAt)}</td>
                     <td>{time(c.claimedAt)}</td>
                   </tr>
@@ -53,7 +53,7 @@ export function AdminHistory() {
         )}
       </div>
       <div className="card">
-        <h2>🎮 Últimas partidas</h2>
+        <h2>Últimas partidas</h2>
         {!games && !error && <Loading />}
         {games && games.length === 0 && <p className="muted">Aún no hay partidas registradas.</p>}
         {games && games.length > 0 && (

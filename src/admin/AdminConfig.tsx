@@ -23,7 +23,7 @@ export function AdminConfig() {
         milestoneMessages: cfg.milestoneMessages.map((m) => m.trim()).filter(Boolean),
       });
       await reloadConfig();
-      setMsg('¡Configuración guardada! ✅');
+      setMsg('Configuración guardada.');
     } catch (e) {
       setError(friendlyError(e));
     } finally {
@@ -33,7 +33,7 @@ export function AdminConfig() {
 
   return (
     <div className="card">
-      <h2>⚙️ Configuración</h2>
+      <h2>Configuración</h2>
       <div className="form">
         <div className="field">
           <label>Velocidad de los obstáculos: {cfg.speedMultiplier.toFixed(2)}×</label>
@@ -69,8 +69,8 @@ export function AdminConfig() {
         </div>
         {msg && <div className="success">{msg}</div>}
         {error && <div className="error">{error}</div>}
-        <button className="btn mint block" onClick={() => void save()} disabled={busy}>
-          {busy ? 'Guardando...' : '💾 Guardar configuración'}
+        <button className="btn sage block" onClick={() => void save()} disabled={busy}>
+          {busy ? 'Guardando...' : 'Guardar configuración'}
         </button>
       </div>
     </div>

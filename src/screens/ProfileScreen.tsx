@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { watchMyClaims, watchRewards } from '../firebase/rewards';
 import type { Claim, Reward } from '../firebase/types';
-import { HeartsBackground } from '../components/Decorations';
+import { BackIcon } from '../components/Icons';
 import { CocoFace } from '../components/Logo';
 import type { Nav } from '../App';
 
@@ -30,27 +30,26 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
 
   return (
     <div className="screen">
-      <HeartsBackground />
       <div className="content">
         <div className="topbar">
-          <button className="icon-btn" onClick={() => nav('menu')} aria-label="Volver">⬅</button>
-          <h1>❤️ Perfil</h1>
-          <span style={{ width: 44 }} />
+          <button className="icon-btn" onClick={() => nav('menu')} aria-label="Volver"><BackIcon /></button>
+          <h1>Mi perfil</h1>
+          <span style={{ width: 42 }} />
         </div>
         <div className="card center">
           <div style={{ width: 90, margin: '0 auto' }}><CocoFace /></div>
           <h2 style={{ margin: '4px 0 16px' }}>{profile?.username}</h2>
           <div className="stats">
-            <div className="stat"><div className="label">Puntos</div><div className="value">🪙 {profile?.points ?? 0}</div></div>
-            <div className="stat"><div className="label">Récord</div><div className="value">🏆 {profile?.highScore ?? 0}</div></div>
-            <div className="stat"><div className="label">Partidas</div><div className="value">🎮 {profile?.gamesPlayed ?? 0}</div></div>
-            <div className="stat"><div className="label">Recompensas</div><div className="value">🎁 {claims.length}/{total}</div></div>
+            <div className="stat"><div className="label">Puntos</div><div className="value">{profile?.points ?? 0}</div></div>
+            <div className="stat"><div className="label">Récord</div><div className="value">{profile?.highScore ?? 0}</div></div>
+            <div className="stat"><div className="label">Partidas</div><div className="value">{profile?.gamesPlayed ?? 0}</div></div>
+            <div className="stat"><div className="label">Recompensas</div><div className="value">{claims.length}/{total}</div></div>
           </div>
         </div>
 
         <div className="card">
-          <h2>🎁 Mis recompensas</h2>
-          {claims.length === 0 && <p className="muted">Todavía no has reclamado ninguna. ¡A jugar!</p>}
+          <h2>Mis recompensas</h2>
+          {claims.length === 0 && <p className="muted">Todavía no has reclamado ninguna.</p>}
           {[...claims]
             .sort((a, b) => (b.claimedAt?.toMillis() ?? 0) - (a.claimedAt?.toMillis() ?? 0))
             .map((c) => (
@@ -59,11 +58,11 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
                   <strong>{c.rewardName}</strong>
                   <div className="muted" style={{ fontSize: '0.9rem' }}>{formatDate(c.claimedAt)}</div>
                 </div>
-                <span className="claimed-tag">RECLAMADA ✓</span>
+                <span className="claimed-tag">Reclamada ✓</span>
               </div>
             ))}
         </div>
-        <button className="btn block" onClick={() => nav('game')}>▶ JUGAR</button>
+        <button className="btn block" onClick={() => nav('game')}>Jugar</button>
       </div>
     </div>
   );

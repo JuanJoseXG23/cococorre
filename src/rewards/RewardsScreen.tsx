@@ -3,7 +3,8 @@ import { useAuth } from '../auth/AuthContext';
 import { claimReward, watchMyClaims, watchRewards } from '../firebase/rewards';
 import { friendlyError } from '../firebase/errors';
 import { DIFFICULTY_LABELS, type Claim, type Reward } from '../firebase/types';
-import { Confetti, HeartsBackground, Loading } from '../components/Decorations';
+import { Confetti, Loading } from '../components/Decorations';
+import { BackIcon } from '../components/Icons';
 import { Modal } from '../components/Modal';
 import { RewardImage } from '../components/RewardImage';
 import type { Nav } from '../App';
@@ -50,12 +51,11 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
 
   return (
     <div className="screen wide">
-      <HeartsBackground />
       <div className="content">
         <div className="topbar">
-          <button className="icon-btn" onClick={() => nav('menu')} aria-label="Volver">⬅</button>
-          <h1>🎁 Recompensas</h1>
-          <span className="pill">🪙 {points}</span>
+          <button className="icon-btn" onClick={() => nav('menu')} aria-label="Volver"><BackIcon /></button>
+          <h1>Recompensas</h1>
+          <span className="pill"><small>Puntos</small><strong>{points}</strong></span>
         </div>
         <p className="center muted" style={{ margin: 0 }}>
           Usa tus puntos para desbloquear recompensas. Cada una se puede reclamar una sola vez.
@@ -64,7 +64,7 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
         {loadError && <div className="error">{loadError}</div>}
         {!rewards && !loadError && <Loading />}
         {rewards && visible.length === 0 && (
-          <div className="card center muted">Aún no hay recompensas disponibles... ¡pronto habrá sorpresas! 💝</div>
+          <div className="card center muted">Aún no hay recompensas disponibles... pronto habrá sorpresas.</div>
         )}
 
         <div className="rewards-grid">
@@ -78,9 +78,9 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
                 <div className="img"><RewardImage image={r.image} alt={r.name} /></div>
                 <h3>{r.name}</h3>
                 <p>{r.description}</p>
-                <div className="cost">🪙 {r.cost} puntos</div>
+                <div className="cost">{r.cost} puntos</div>
                 {claimed ? (
-                  <div className="claimed-tag">RECLAMADA ✓</div>
+                  <div className="claimed-tag">Reclamada ✓</div>
                 ) : (
                   <>
                     {!affordable && (
@@ -97,7 +97,7 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
                         setConfirming(r);
                       }}
                     >
-                      {affordable ? '🎁 RECLAMAR' : '🔒 RECLAMAR'}
+                      {affordable ? 'Reclamar' : 'Aún no alcanza'}
                     </button>
                   </>
                 )}
@@ -106,7 +106,7 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
           })}
         </div>
         <button className="btn block" onClick={() => nav('game')} style={{ maxWidth: 460, alignSelf: 'center' }}>
-          ▶ JUGAR PARA GANAR MÁS
+          Jugar para ganar más
         </button>
       </div>
 
@@ -114,8 +114,8 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
         <Modal onClose={busy ? undefined : () => setConfirming(null)}>
           <div className="center">
             <div style={{ fontSize: 56 }} className="reward"><div className="img" style={{ margin: '0 auto' }}><RewardImage image={confirming.image} alt={confirming.name} /></div></div>
-            <h2 style={{ margin: '8px 0' }}>🎁 ¿Quieres reclamar?</h2>
-            <h3 style={{ margin: 0, textTransform: 'uppercase', color: 'var(--pink-dark)' }}>{confirming.name}</h3>
+            <h2 style={{ margin: '8px 0' }}>¿Quieres reclamar?</h2>
+            <h3 style={{ margin: 0, textTransform: 'uppercase', color: 'var(--rose-dark)' }}>{confirming.name}</h3>
           </div>
           <div className="balance" style={{ marginTop: 16 }}>
             <span>Costo</span><span>{confirming.cost} puntos</span>
@@ -124,28 +124,28 @@ export function RewardsScreen({ nav }: { nav: Nav }) {
           </div>
           {claimError && <div className="error" style={{ marginTop: 12 }}>{claimError}</div>}
           <div className="modal-actions">
-            <button className="btn ghost" onClick={() => setConfirming(null)} disabled={busy}>CANCELAR</button>
-            <button className="btn" onClick={doClaim} disabled={busy}>{busy ? '...' : 'RECLAMAR'}</button>
+            <button className="btn ghost" onClick={() => setConfirming(null)} disabled={busy}>Cancelar</button>
+            <button className="btn" onClick={doClaim} disabled={busy}>{busy ? '...' : 'Reclamar'}</button>
           </div>
         </Modal>
       )}
 
       {celebrate && (
         <>
-          <Confetti count={60} />
+          <Confetti count={40} />
           <Modal onClose={() => setCelebrate(null)}>
             <div className="celebrate">
-              <h2 style={{ color: 'var(--pink)' }}>❤️ ¡RECOMPENSA RECLAMADA!</h2>
+              <h2 style={{ color: 'var(--rose-dark)' }}>¡Recompensa reclamada!</h2>
               <p className="muted" style={{ margin: 0 }}>Has desbloqueado:</p>
               <div className="emoji"><RewardImage image={celebrate.image} alt={celebrate.name} /></div>
-              <h2 style={{ textTransform: 'uppercase', margin: '4px 0' }}>{celebrate.name}</h2>
+              <h2 style={{ margin: '4px 0' }}>{celebrate.name}</h2>
               <p>{config.claimMessage}</p>
               <div className="ticket">
-                🎟️ Esta recompensa es válida para:<br />
-                UNA PERSONA MUY ESPECIAL ❤️
+                Esta recompensa es válida para:<br />
+                <strong>una persona muy especial</strong>
               </div>
               <button className="btn block" style={{ marginTop: 16 }} onClick={() => setCelebrate(null)}>
-                ¡Gracias! 💕
+                Gracias
               </button>
             </div>
           </Modal>

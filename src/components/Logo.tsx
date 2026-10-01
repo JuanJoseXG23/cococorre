@@ -5,12 +5,10 @@ export function Logo({ small = false }: { small?: boolean }) {
   return (
     <div className="logo">
       {!small && <CocoFace />}
-      <div className="title" style={small ? { fontSize: '2.2rem' } : undefined}>
-        <span>CoCo</span>
-        <span>Co</span>
-        <span>rre</span>
+      <div className="title" style={small ? { fontSize: '2rem' } : undefined}>
+        CoCo<span className="accent">Corre</span>
       </div>
-      {!small && <div className="subtitle">Hecho con ❤️ para {PLAYER_NAME}</div>}
+      {!small && <div className="subtitle">Hecho con cariño para {PLAYER_NAME}</div>}
     </div>
   );
 }

@@ -32,8 +32,8 @@ export function AdminUsers() {
   return (
     <div className="card">
       <div className="topbar" style={{ marginBottom: 8 }}>
-        <h2 style={{ margin: 0 }}>👥 Usuarios</h2>
-        <button className="btn ghost small" onClick={load}>🔄 Actualizar</button>
+        <h2 style={{ margin: 0 }}>Usuarios</h2>
+        <button className="btn ghost small" onClick={load}>Actualizar</button>
       </div>
       {error && <div className="error">{error}</div>}
       {!users && !error && <Loading />}
@@ -49,13 +49,13 @@ export function AdminUsers() {
               {users.map((u) => (
                 <tr key={u.uid}>
                   <td><strong>{u.username}</strong></td>
-                  <td>🪙 {u.points}</td>
-                  <td>🏆 {u.highScore}</td>
+                  <td>{u.points}</td>
+                  <td>{u.highScore}</td>
                   <td>{u.gamesPlayed}</td>
-                  <td>🎁 {u.claimedCount}</td>
+                  <td>{u.claimedCount}</td>
                   <td>{formatDate(u.createdAt)}</td>
                   <td>
-                    <button className="btn yellow small" onClick={() => setGift(u)}>Ajustar puntos</button>
+                    <button className="btn sand small" onClick={() => setGift(u)}>Ajustar puntos</button>
                   </td>
                 </tr>
               ))}
@@ -65,13 +65,13 @@ export function AdminUsers() {
       )}
       {gift && (
         <Modal onClose={() => setGift(null)}>
-          <h2>🎁 Puntos para {gift.username}</h2>
+          <h2>Puntos para {gift.username}</h2>
           <p className="muted">Saldo actual: {gift.points}. Usa un número negativo para quitar puntos.</p>
           <input className="input" type="number" step={1} value={amount} onChange={(e) => setAmount(Math.floor(Number(e.target.value) || 0))} />
           <p>Nuevo saldo: <strong>{Math.max(0, gift.points + amount)}</strong></p>
           <div className="modal-actions">
             <button className="btn ghost" onClick={() => setGift(null)}>Cancelar</button>
-            <button className="btn mint" onClick={() => void giveGift()}>Guardar</button>
+            <button className="btn sage" onClick={() => void giveGift()}>Guardar</button>
           </div>
         </Modal>
       )}

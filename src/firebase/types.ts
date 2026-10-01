@@ -64,15 +64,15 @@ export const DEFAULT_CONFIG: GameConfig = {
   speedMultiplier: 1,
   milestoneEvery: 25,
   milestoneMessages: [
-    '❤️ ¡Muy bien! Cada vez estás más cerca de desbloquear algo especial...',
-    '🐶 ¡Coco está orgulloso de ti!',
-    '⭐ ¡Imparable! Sigue así, mi amor.',
-    '💕 Cada paso cuenta... ¡y tú vas volando!',
-    '🎁 Mmm... huele a recompensa cerca.',
+    '¡Muy bien! Cada vez estás más cerca de desbloquear algo especial...',
+    'Coco está orgulloso de ti.',
+    '¡Imparable! Sigue así, mi amor.',
+    'Cada paso cuenta... y tú vas volando.',
+    'Mmm... huele a recompensa cerca.',
   ],
-  recordMessage: 'Sabía que podías hacerlo ❤️',
+  recordMessage: 'Sabía que podías hacerlo.',
   claimMessage: '¡Guárdala para cuando nos veamos!',
-  welcomeMessage: '¡Hola, mi amor! Coco te estaba esperando 🐶',
+  welcomeMessage: '¡Hola, mi amor! Coco te estaba esperando.',
 };
 
 export const DIFFICULTY_LABELS: Record<RewardDifficulty, string> = {

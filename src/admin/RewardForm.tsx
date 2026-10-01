@@ -50,7 +50,7 @@ export function RewardForm({ initial, nextOrder, onSave, onCancel }: Props) {
 
   return (
     <form className="form" onSubmit={submit}>
-      <h2 style={{ margin: 0 }}>{initial ? '✏️ Editar recompensa' : '✨ Nueva recompensa'}</h2>
+      <h2 style={{ margin: 0 }}>{initial ? 'Editar recompensa' : 'Nueva recompensa'}</h2>
       <div className="field">
         <label>Nombre</label>
         <input className="input" maxLength={60} value={r.name} onChange={(e) => set('name', e.target.value)} />
@@ -104,7 +104,7 @@ export function RewardForm({ initial, nextOrder, onSave, onCancel }: Props) {
             </div>
             <input className="input" placeholder="…o pega un emoji / URL https://" value={r.image.startsWith('data:') ? '(imagen subida)' : r.image} onChange={(e) => set('image', e.target.value)} />
             <label className="btn ghost small" style={{ alignSelf: 'flex-start' }}>
-              📷 Subir imagen
+              Subir imagen
               <input type="file" accept="image/*" hidden onChange={(e) => void onFile(e.target.files?.[0])} />
             </label>
           </div>
@@ -117,7 +117,7 @@ export function RewardForm({ initial, nextOrder, onSave, onCancel }: Props) {
       {error && <div className="error">{error}</div>}
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={onCancel} disabled={busy}>Cancelar</button>
-        <button type="submit" className="btn mint" disabled={busy}>{busy ? 'Guardando...' : 'Guardar'}</button>
+        <button type="submit" className="btn sage" disabled={busy}>{busy ? 'Guardando...' : 'Guardar'}</button>
       </div>
     </form>
   );

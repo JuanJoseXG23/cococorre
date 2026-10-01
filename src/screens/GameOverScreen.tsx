@@ -2,16 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { submitGame, type GameSubmitResult } from '../firebase/users';
 import { friendlyError } from '../firebase/errors';
-import { Confetti, HeartsBackground, Loading } from '../components/Decorations';
+import { Confetti, Loading } from '../components/Decorations';
+import { levelForScore } from '../game/difficulty';
 import type { GameResult } from '../game/types';
 import type { Nav } from '../App';
 
 const CAUSES: Record<GameResult['cause'], string> = {
-  car: '🚗 ¡Un carro atropelló a Coco!',
-  train: '🚆 ¡El tren pasó muy rápido!',
-  water: '💦 ¡Coco cayó al agua!',
-  swept: '🌊 ¡El río se llevó a Coco!',
-  eagle: '💤 ¡Coco se quedó atrás!',
+  car: 'Un carro atropelló a Coco.',
+  train: 'El tren pasó muy rápido.',
+  water: 'Coco cayó al agua.',
+  swept: 'El río se llevó a Coco.',
+  eagle: 'Coco se quedó atrás.',
 };
 
 /** Evita registrar la misma partida dos veces (p. ej. con React StrictMode). */
@@ -56,57 +57,57 @@ export function GameOverScreen({ result, nav, onPlayAgain }: { result: GameResul
     return () => window.removeEventListener('keydown', onKey);
   }, [saved, onPlayAgain]);
 
+  const newRecord = Boolean(saved?.newRecord && result.score > 0);
+  const busy = !saved && !error;
+
   return (
     <div className="screen">
-      <HeartsBackground />
-      {saved?.newRecord && result.score > 0 && <Confetti />}
+      {newRecord && <Confetti />}
       <div className="content">
-        <h1 className="gameover-title">💥 GAME OVER</h1>
+        <h1 className="gameover-title">Fin del juego</h1>
         <div className="card">
           <p className="center muted" style={{ marginTop: 0 }}>{CAUSES[result.cause]}</p>
-          <div className="center muted" style={{ fontWeight: 600 }}>Puntuación</div>
+          <div className="center muted">Puntuación</div>
           <div className="big-score">{result.score}</div>
-          {result.hearts > 0 && (
-            <p className="center muted" style={{ marginBottom: 0 }}>
-              Incluye {result.hearts} ❤️ recogido{result.hearts > 1 ? 's' : ''}
-            </p>
-          )}
+          <p className="center muted" style={{ marginBottom: 0 }}>
+            Llegaste al nivel {levelForScore(result.score)}
+            {result.hearts > 0 && ` · ${result.hearts} ${result.hearts > 1 ? 'corazones' : 'corazón'}`}
+          </p>
 
-          {saved?.newRecord && result.score > 0 && (
+          {newRecord && (
             <div className="record-banner" style={{ marginTop: 14 }}>
-              ✨ ¡NUEVO RÉCORD! ✨<br />
-              <span style={{ fontWeight: 500 }}>{config.recordMessage}</span>
+              ¡Nuevo récord!<br />
+              <span style={{ fontWeight: 400 }}>{config.recordMessage}</span>
             </div>
           )}
 
           <div style={{ marginTop: 16 }}>
-            {!saved && !error && <Loading text="Guardando tus puntos..." />}
+            {busy && <Loading text="Guardando tus puntos..." />}
             {error && (
               <div className="form">
                 <div className="error">No se pudieron guardar los puntos: {error}</div>
-                <button className="btn mint block" onClick={save}>Reintentar</button>
+                <button className="btn sage block" onClick={save}>Reintentar</button>
               </div>
             )}
             {saved && (
               <div className="balance">
                 <span>Saldo anterior</span><span>{saved.previousPoints}</span>
-                <span>Partida</span><span style={{ color: 'var(--mint-dark)', fontWeight: 700 }}>+{result.score}</span>
-                <span className="total">🪙 Puntos acumulados</span><span className="total">{saved.newPoints}</span>
+                <span>Partida</span><span className="positive">+{result.score}</span>
+                <span className="total">Puntos acumulados</span><span className="total">{saved.newPoints}</span>
               </div>
             )}
           </div>
         </div>
 
         <div className="menu-buttons">
-          <button ref={playAgainRef} className="btn big block" onClick={onPlayAgain} disabled={!saved && !error}>
-            🔁 VOLVER A JUGAR
+          <button ref={playAgainRef} className="btn big block" onClick={onPlayAgain} disabled={busy}>
+            Volver a jugar
           </button>
-          <button className="btn yellow block" onClick={() => nav('rewards')} disabled={!saved && !error}>
-            🎁 RECOMPENSAS
-          </button>
-          <button className="btn ghost block" onClick={() => nav('menu')} disabled={!saved && !error}>
-            🏠 MENÚ PRINCIPAL
-          </button>
+          <div className="menu-grid">
+            <button className="btn sand" onClick={() => nav('rewards')} disabled={busy}>Recompensas</button>
+            <button className="btn sage" onClick={() => nav('ranking')} disabled={busy}>Ranking</button>
+          </div>
+          <button className="btn ghost block" onClick={() => nav('menu')} disabled={busy}>Menú principal</button>
         </div>
       </div>
     </div>

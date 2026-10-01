@@ -43,15 +43,15 @@ export function AdminRewards() {
   return (
     <div className="card">
       <div className="topbar" style={{ marginBottom: 8, flexWrap: 'wrap' }}>
-        <h2 style={{ margin: 0 }}>🎁 Recompensas</h2>
-        <button className="btn mint small" onClick={() => setEditing('new')}>➕ Nueva recompensa</button>
+        <h2 style={{ margin: 0 }}>Recompensas</h2>
+        <button className="btn sage small" onClick={() => setEditing('new')}>Nueva recompensa</button>
       </div>
       {error && <div className="error">{error}</div>}
       {!rewards && <Loading />}
       {rewards && rewards.length === 0 && (
         <div className="center" style={{ padding: 16 }}>
           <p className="muted">No hay recompensas todavía.</p>
-          <button className="btn yellow" onClick={() => void seed()}>✨ Cargar las 5 recompensas iniciales</button>
+          <button className="btn sand" onClick={() => void seed()}>Cargar las 5 recompensas iniciales</button>
         </div>
       )}
       {rewards?.map((r) => (
@@ -62,12 +62,12 @@ export function AdminRewards() {
             <span className={`badge ${r.difficulty}`}>{DIFFICULTY_LABELS[r.difficulty]}</span>{' '}
             {!r.active && <span className="badge off">Inactiva</span>}
             <div className="muted" style={{ fontSize: '0.9rem' }}>{r.description}</div>
-            <div style={{ fontWeight: 700 }}>🪙 {r.cost} puntos</div>
+            <div style={{ fontWeight: 600 }}>{r.cost} puntos</div>
           </div>
           <div className="actions">
             <button className="btn sky small" onClick={() => setEditing(r)}>Editar</button>
             <button
-              className={`btn small ${r.active ? 'ghost' : 'mint'}`}
+              className={`btn small ${r.active ? 'ghost' : 'sage'}`}
               onClick={() => void run(() => updateReward(r.id, { active: !r.active }))}
             >
               {r.active ? 'Desactivar' : 'Activar'}
@@ -94,7 +94,7 @@ export function AdminRewards() {
 
       {deleting && (
         <Modal onClose={() => setDeleting(null)}>
-          <h2>🗑️ ¿Eliminar "{deleting.name}"?</h2>
+          <h2>¿Eliminar "{deleting.name}"?</h2>
           <p className="muted">
             Las reclamaciones ya hechas se conservan en el historial. Si sólo quieres ocultarla,
             es mejor <strong>desactivarla</strong>.
