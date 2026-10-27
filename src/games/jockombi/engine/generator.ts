@@ -14,35 +14,35 @@ export interface WorldContent {
   gems: Gem[];
   crates: Crate[];
   nextId(): number;
-  /** Tamaño actual de la horda (para dar más civiles antes de vehículos grandes). */
+  /** Tamaño actual de la jauría (para dar más perritos antes de vehículos grandes). */
   hordeSize(): number;
 }
 
-type ChunkKind = 'civilians' | 'gap' | 'bomb' | 'vehicle' | 'platforms';
+type ChunkKind = 'strays' | 'gap' | 'bomb' | 'vehicle' | 'platforms';
 
 /** Longitud del tramo seguro al inicio de la partida. */
 export const START_RUNWAY = 900;
 
 /**
- * Genera la ciudad por tramos delante de la horda.
+ * Genera la ciudad por tramos delante de la jauría.
  *
  * Reglas para que nunca sea imposible:
  *  - Cada peligro empieza y termina con un tramo de calle libre ("pista") de
  *    al menos medio segundo de carrera + margen: nunca hay un hueco pegado a
  *    una bomba o a un vehículo.
  *  - Los huecos se calculan con el alcance real del salto a la velocidad que
- *    tendrá la horda en ese punto (la velocidad depende de la distancia).
+ *    tendrá la jauría en ese punto (la velocidad depende de la distancia).
  *  - Los huecos que exigen salto largo sólo aparecen con dificultad alta.
  *  - Todo vehículo se puede saltar o se puede caer sobre su techo.
  */
 export class Generator {
   cursor = START_RUNWAY;
   private lastPower = 0;
-  private last: ChunkKind = 'civilians';
+  private last: ChunkKind = 'strays';
 
   constructor(private w: WorldContent, private rng: () => number) {
     w.ground.push({ x0: -4000, x1: START_RUNWAY });
-    // Primeros civiles: enseñan la mecánica sin peligros.
+    // Primeros perritos: enseñan la mecánica sin peligros.
     this.ped(560, 0, 380, START_RUNWAY - 20);
     this.ped(760, 0, 620, START_RUNWAY - 20);
     this.gemLine(260, -24, 4, 36);
@@ -77,17 +77,17 @@ export class Generator {
       return;
     }
     const weights: [ChunkKind, number][] = [
-      ['civilians', 3.2 - 1.3 * d],
+      ['strays', 3.2 - 1.3 * d],
       ['gap', 1.5 + 1.7 * d],
       ['bomb', this.meters < 60 ? 0 : 1 + 1.4 * d],
       ['vehicle', this.meters < 40 ? 0.6 : 1.7 + 0.6 * d],
       ['platforms', 1.1],
     ];
     // Evita repetir el mismo peligro dos veces seguidas.
-    const pool = weights.map(([k, wt]) => [k, k === this.last && k !== 'civilians' ? wt * 0.35 : wt] as const);
+    const pool = weights.map(([k, wt]) => [k, k === this.last && k !== 'strays' ? wt * 0.35 : wt] as const);
     const total = pool.reduce((s, [, wt]) => s + wt, 0);
     let pick = r() * total;
-    let kind: ChunkKind = 'civilians';
+    let kind: ChunkKind = 'strays';
     for (const [k, wt] of pool) {
       pick -= wt;
       if (pick <= 0) {
@@ -97,7 +97,7 @@ export class Generator {
     }
     this.last = kind;
     switch (kind) {
-      case 'civilians': return this.civilians();
+      case 'strays': return this.strays();
       case 'gap': return this.gap();
       case 'bomb': return this.bomb();
       case 'vehicle': return this.vehicle();
@@ -117,11 +117,12 @@ export class Generator {
   private ped(x: number, y: number, minX: number, maxX: number) {
     const r = this.rng;
     const look = Math.floor(r() * PED_LOOKS.length);
-    const kind = PED_LOOKS[look].kind;
+    // Los perritos grandes huyen más rápido que los pequeños (patas cortas = más lentos).
+    const l = PED_LOOKS[look];
     this.w.peds.push({
       id: this.w.nextId(), look, x, y, minX, maxX,
       vx: 0, lane: Math.floor(r() * 3), phase: r(), panic: false,
-      run: kind === 'granny' ? 34 + r() * 14 : kind === 'kid' ? 70 + r() * 30 : 55 + r() * 45,
+      run: 30 + l.legH * 4 + r() * 30,
     });
   }
 
@@ -137,7 +138,7 @@ export class Generator {
     }
   }
 
-  private civilians(len = 520 + this.rng() * 260, count?: number) {
+  private strays(len = 520 + this.rng() * 260, count?: number) {
     const r = this.rng;
     const start = this.cursor;
     this.flat(len);
@@ -197,14 +198,14 @@ export class Generator {
     const kind = kinds[Math.floor(r() * kinds.length)];
     const spec = VEHICLES[kind];
     const horde = this.w.hordeSize();
-    // Si a la horda le faltan zombis, a veces hay civiles antes para alcanzarlo.
-    if (horde < spec.req && r() < 0.7) this.civilians(420 + r() * 160, Math.min(5, 2 + Math.floor(r() * (spec.req - horde))));
+    // Si a la jauría le faltan perritos, a veces hay perritos antes para alcanzarlo.
+    if (horde < spec.req && r() < 0.7) this.strays(420 + r() * 160, Math.min(5, 2 + Math.floor(r() * (spec.req - horde))));
     const moving = (kind === 'car' || kind === 'van') && d > 0.3 && r() < 0.35;
     const rw = this.runway();
     let x: number;
     let minX: number;
     if (moving) {
-      // Tramo largo: el vehículo entra por la derecha y avanza hacia la horda.
+      // Tramo largo: el vehículo entra por la derecha y avanza hacia la jauría.
       const start = this.cursor;
       const len = rw + 900 + spec.w;
       this.flat(len);

@@ -36,15 +36,15 @@ export const PX_PER_METER = 30;
 /** Metros en los que la dificultad llega al máximo (después ya no sube). */
 export const DIFFICULTY_FULL_AT_M = 2500;
 
-// ---------- Horda ----------
-/** Máximo de zombis en la horda (rendimiento y equilibrio). Igual que en firestore.rules. */
+// ---------- Jauría ----------
+/** Máximo de perritos en la jauría (rendimiento y equilibrio). Igual que en firestore.rules. */
 export const HORDE_MAX = 75;
-/** Caja de colisión de un zombi (pies en x, y). */
+/** Caja de colisión de un perrito zombi (patas en x, y). */
 export const ZOMBIE_HALF_W = 9;
-export const ZOMBIE_H = 44;
+export const ZOMBIE_H = 36;
 /** Por debajo de esta profundidad un zombi que cayó ya no se puede salvar. */
 export const PIT_DOOM_Y = 10;
-/** Desplazamiento vertical y escala de las 3 filas de profundidad de la horda. */
+/** Desplazamiento vertical y escala de las 3 filas de profundidad de la jauría. */
 export const LANE_Y = [4, -3, -10];
 export const LANE_SCALE = [1, 0.94, 0.88];
 
@@ -59,7 +59,7 @@ export interface VehicleSpec {
   req: number;
   /** Gemas al aplastarlo. */
   gems: number;
-  /** Pasajeros que se unen a la horda al aplastarlo. */
+  /** Pasajeros que se unen a la jauría al aplastarlo. */
   riders: number;
   /** Dificultad (0..1) a partir de la que aparece. */
   minDifficulty: number;
@@ -88,9 +88,9 @@ export interface PowerSpec {
 }
 
 export const POWERS: Record<PowerKind, PowerSpec> = {
-  giant: { label: 'Gigante', duration: 8, color: '#ff7a45', hint: 'El líder crece: aplasta vehículos y pisa bombas sin daño' },
-  magnet: { label: 'Imán', duration: 10, color: '#4cc3ff', hint: 'Atrae gemas y civiles cercanos' },
+  giant: { label: 'Gigante', duration: 8, color: '#ff7a45', hint: 'Jocko crece: aplasta vehículos y pisa bombas sin daño' },
+  magnet: { label: 'Imán', duration: 10, color: '#4cc3ff', hint: 'Atrae gemas y perritos cercanos' },
   shield: { label: 'Escudo', duration: 15, color: '#b48cff', hint: 'Absorbe el próximo golpe de bomba o vehículo' },
-  clone: { label: 'Clonación', duration: 0, color: '#7be36a', hint: '+5 zombis al instante' },
+  clone: { label: 'Clonación', duration: 0, color: '#7be36a', hint: '+5 perritos zombis al instante' },
 };
 export const CLONE_AMOUNT = 5;

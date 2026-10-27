@@ -1,6 +1,6 @@
 import { doc, onSnapshot, runTransaction, serverTimestamp, setDoc, type Timestamp, type Unsubscribe } from 'firebase/firestore';
 import { getDb } from '../../firebase/app';
-import { ZOMBIE_RUSH_ID } from './meta';
+import { JOCKOMBI_DATA_ID } from './meta';
 import type { RunStats } from './engine/types';
 
 /**
@@ -51,8 +51,8 @@ export const EMPTY_STATS: ZombieStats = {
 const MAX_DISTANCE = 60000;
 const MAX_HORDE = 75;
 
-const statsRef = (uid: string) => doc(getDb(), 'users', uid, 'gameStats', ZOMBIE_RUSH_ID);
-const runRef = (uid: string, runId: string) => doc(getDb(), 'users', uid, 'gameStats', ZOMBIE_RUSH_ID, 'runs', runId);
+const statsRef = (uid: string) => doc(getDb(), 'users', uid, 'gameStats', JOCKOMBI_DATA_ID);
+const runRef = (uid: string, runId: string) => doc(getDb(), 'users', uid, 'gameStats', JOCKOMBI_DATA_ID, 'runs', runId);
 
 // ---------------------------------------------------------------- Almacenamiento local
 

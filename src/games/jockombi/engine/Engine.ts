@@ -20,7 +20,7 @@ export interface EngineOptions {
  * `destroy()` cancela el bucle y quita todos los listeners: una partida
  * anterior nunca puede seguir modificando una nueva.
  */
-export class ZombieRushEngine {
+export class JockombiEngine {
   readonly world: World;
   private renderer: Renderer;
   private raf = 0;
@@ -48,7 +48,7 @@ export class ZombieRushEngine {
     });
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas.parentElement ?? canvas);
-    if (import.meta.env.DEV) (window as unknown as { __zombieRush?: ZombieRushEngine }).__zombieRush = this;
+    if (import.meta.env.DEV) (window as unknown as { __jockombi?: JockombiEngine }).__jockombi = this;
   }
 
   start() {
@@ -75,8 +75,8 @@ export class ZombieRushEngine {
     this.raf = 0;
     this.detachInput();
     this.resizeObserver.disconnect();
-    const g = window as unknown as { __zombieRush?: ZombieRushEngine };
-    if (g.__zombieRush === this) delete g.__zombieRush;
+    const g = window as unknown as { __jockombi?: JockombiEngine };
+    if (g.__jockombi === this) delete g.__jockombi;
   }
 
   private frame = (now: number) => {

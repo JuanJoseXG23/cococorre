@@ -5,8 +5,8 @@ import { LANE_SCALE, LANE_Y } from './engine/constants';
 import { hash01 } from './engine/rng';
 
 /**
- * Ilustración animada de la horda (portada del menú y pantalla de inicio),
- * dibujada con los mismos sprites del juego. Cada 2,6 s la horda salta en ola.
+ * Ilustración animada de la jauría (portada del menú y pantalla de inicio),
+ * dibujada con los mismos sprites del juego. Cada 2,6 s la jauría salta en ola.
  */
 export function HordePreview({ count = 8, className, night = false }: { count?: number; className?: string; night?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -35,7 +35,7 @@ export function HordePreview({ count = 8, className, night = false }: { count?: 
 
     const members = Array.from({ length: count }, (_, i) => ({
       look: i === 0 ? LEADER_LOOK_INDEX : (i * 5) % PED_LOOKS.length,
-      off: i === 0 ? 0 : -8 - i * 13 + (hash01(i) - 0.5) * 6,
+      off: i === 0 ? 0 : -12 - i * 17 + (hash01(i) - 0.5) * 6,
       lane: i === 0 ? 0 : i % 3 === 1 ? 1 : i % 3 === 2 ? 2 : 0,
       phase: hash01(i * 3),
     }));
@@ -55,12 +55,12 @@ export function HordePreview({ count = 8, className, night = false }: { count?: 
       ctx.fillStyle = night ? 'rgba(255,255,255,0.25)' : 'rgba(40,30,60,0.22)';
       const shift = (t * 120) % 40;
       for (let x = -shift; x < vw; x += 40) ctx.fillRect(x, ground + 6, 20, 2);
-      // civil que huye
-      const leadX = vw * 0.62;
-      const pedX = leadX + 46 + Math.sin(t * 1.3) * 8;
+      // perrito que huye
+      const leadX = vw * 0.66;
+      const pedX = leadX + 52 + Math.sin(t * 1.3) * 8;
       const pedImg = cache.ped(2, Math.floor((t * 2.6 * 8) % 8), true);
       SpriteCache.blit(ctx, pedImg, pedX, ground, 0.95);
-      // la horda (de atrás hacia adelante)
+      // la jauría (de atrás hacia adelante)
       const cycle = t % 2.6;
       for (let lane = 2; lane >= 0; lane--) {
         for (let i = members.length - 1; i >= 0; i--) {

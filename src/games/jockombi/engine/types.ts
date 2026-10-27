@@ -16,7 +16,7 @@ export interface Zombie {
   x: number;
   y: number;
   vy: number;
-  /** Posición relativa al ancla de la horda (se acerca suavemente a su puesto). */
+  /** Posición relativa al ancla de la jauría (se acerca suavemente a su puesto). */
   off: number;
   /** Fila de profundidad (0 delante, 2 detrás) y su desplazamiento visual suavizado. */
   lane: number;
@@ -59,7 +59,7 @@ export interface Vehicle {
   w: number;
   h: number;
   req: number;
-  /** Velocidad propia (negativa = viene hacia la horda). */
+  /** Velocidad propia (negativa = viene hacia la jauría). */
   vx: number;
   /** No puede pasar de aquí (borde de su tramo de calle). */
   minX: number;
@@ -68,8 +68,7 @@ export interface Vehicle {
   color: number;
 }
 
-export type PedKind = 'office' | 'lady' | 'kid' | 'granny' | 'jogger' | 'tourist';
-
+/** Perrito de la calle (todavía no contagiado). */
 export interface Pedestrian {
   id: number;
   look: number;

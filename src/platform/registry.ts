@@ -1,7 +1,7 @@
 import type { ComponentType } from 'react';
 import type { Screen } from './navigation';
 import { cococorreGame } from '../games/cococorre/entry';
-import { zombieRushGame } from '../games/zombie-rush/entry';
+import { jockombiGame } from '../games/jockombi/entry';
 
 /**
  * Registro central de juegos de la plataforma. El menú principal se
@@ -26,4 +26,4 @@ export interface GameEntry {
   badge?: string;
 }
 
-export const GAMES: GameEntry[] = [cococorreGame, zombieRushGame];
+export const GAMES: GameEntry[] = [cococorreGame, jockombiGame];

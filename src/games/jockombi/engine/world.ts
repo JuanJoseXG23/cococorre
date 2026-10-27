@@ -43,7 +43,7 @@ type LossCause = 'fall' | 'blast' | 'crash';
 export class World {
   readonly rng: () => number;
   time = 0;
-  /** Posición x del "ancla" de la horda: avanza siempre a `speed`. */
+  /** Posición x del "ancla" de la jauría: avanza siempre a `speed`. */
   anchorX = 0;
   speed = speedAt(0);
   viewW = 960;
@@ -198,12 +198,12 @@ export class World {
     this.prune();
   }
 
-  // ------------------------------------------------------------------ Horda
+  // ------------------------------------------------------------------ Jauría
 
   /** Puesto (desplazamiento detrás del ancla) del zombi número i de n. */
   private slotOffset(i: number, n: number): number {
     if (i === 0) return 0;
-    const spacing = lerp(11.5, 7.2, Math.min(1, n / HORDE_MAX));
+    const spacing = lerp(13, 8.4, Math.min(1, n / HORDE_MAX));
     return -6 - i * spacing + (hash01(i * 7 + 3) - 0.5) * 6;
   }
 
@@ -391,7 +391,7 @@ export class World {
     }
   }
 
-  // ------------------------------------------------------------------ Civiles
+  // ------------------------------------------------------------------ Perritos de la calle
 
   private updatePeds(dt: number) {
     const lx = this.leader?.x ?? this.anchorX;
@@ -436,7 +436,7 @@ export class World {
       z.laneY = LANE_Y[p.lane];
       this.texts.push({ x: p.x, y: p.y - 60, text: '+1', color: '#9dff6a', life: 0, size: 22 });
     } else {
-      // Horda llena: el civil se convierte en gemas.
+      // Jauría llena: el perrito se convierte en gemas.
       this.stats.gems += 2;
       this.texts.push({ x: p.x, y: p.y - 60, text: '+2 gemas', color: '#7ef0c4', life: 0, size: 18 });
     }

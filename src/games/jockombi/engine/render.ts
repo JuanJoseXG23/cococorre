@@ -1,6 +1,5 @@
 import { LANE_SCALE, POWERS } from './constants';
-import { PED_LOOKS, ZOMBIE_LOOKS } from './looks';
-import { FRAME_FALL, FRAME_JUMP, SpriteCache, runFrame, shade } from './sprites';
+import { FRAME_FALL, FRAME_JUMP, SpriteCache, drawLeaderIcon, runFrame, shade } from './sprites';
 import { clamp, hash01 } from './rng';
 import { BIOME_EVERY_M, type World } from './world';
 import type { Vehicle } from './types';
@@ -95,6 +94,8 @@ export function paletteAt(meters: number): Palette {
   };
 }
 
+/** Los perritos se dibujan un poco más grandes que su caja de colisión (se leen mejor). */
+const DOG_DRAW = 1.2;
 const FONT = "Fredoka, 'Segoe UI', system-ui, sans-serif";
 const CAR_COLORS = ['#e84a5f', '#2a9df4', '#f9c74f', '#43aa8b'];
 const PLATFORM_COLORS = ['#e05a5a', '#3f8fd8', '#f0a63a', '#4bb38a'];
@@ -558,7 +559,7 @@ export class Renderer {
       ctx.fillStyle = Math.sin(time * 10) > 0 ? '#ff4d5e' : '#4cc3ff';
       ctx.fillRect(x + w / 2 - 12, -h - 8, 24, 8);
     }
-    // faros (miran hacia la horda) y ruedas
+    // faros (miran hacia la jauría) y ruedas
     ctx.fillStyle = '#fff3b0';
     ctx.beginPath();
     ctx.arc(x + 5, -h * 0.32, 5, 0, Math.PI * 2);
@@ -706,13 +707,12 @@ export class Renderer {
   private drawPeds(w: World) {
     const ctx = this.ctx;
     for (const p of w.peds) {
-      const look = PED_LOOKS[p.look];
-      const s = look.scale * LANE_SCALE[p.lane];
+      const s = LANE_SCALE[p.lane] * DOG_DRAW;
       const y = p.y + [4, -3, -10][p.lane];
       const img = this.sprites.ped(p.look, Math.floor(p.phase * 8) % 8, p.panic);
       ctx.fillStyle = 'rgba(0,0,0,0.18)';
       ctx.beginPath();
-      ctx.ellipse(p.x, y, 10 * s, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(p.x, y, 15 * s, 3, 0, 0, Math.PI * 2);
       ctx.fill();
       if (p.vx < -1) {
         ctx.save();
@@ -728,8 +728,8 @@ export class Renderer {
         ctx.strokeStyle = '#2a2230';
         ctx.lineWidth = 3;
         ctx.font = `700 16px ${FONT}`;
-        ctx.strokeText('!', p.x + 4, y - 52 * s);
-        ctx.fillText('!', p.x + 4, y - 52 * s);
+        ctx.strokeText('!', p.x + 10 * s, y - 42 * s);
+        ctx.fillText('!', p.x + 10 * s, y - 42 * s);
       }
     }
   }
@@ -741,16 +741,15 @@ export class Renderer {
       for (let i = w.horde.length - 1; i >= 0; i--) {
         const z = w.horde[i];
         if (z.lane !== lane) continue;
-        const look = ZOMBIE_LOOKS[z.look];
         const big = giant && i === 0;
-        let s = LANE_SCALE[lane] * look.scale;
+        let s = LANE_SCALE[lane] * DOG_DRAW;
         if (z.age < 0.25) s *= 0.4 + (z.age / 0.25) * 0.6;
         const frame = z.grounded ? runFrame(z.phase) : z.vy < 0 ? FRAME_JUMP : FRAME_FALL;
         const y = z.y + z.laneY;
         if (z.grounded) {
           ctx.fillStyle = 'rgba(0,0,0,0.2)';
           ctx.beginPath();
-          ctx.ellipse(z.x, y, (big ? 22 : 10) * s, 3, 0, 0, Math.PI * 2);
+          ctx.ellipse(z.x, y, (big ? 30 : 15) * s, 3, 0, 0, Math.PI * 2);
           ctx.fill();
         }
         const mul = big ? 2.1 : 1;
@@ -777,7 +776,7 @@ export class Renderer {
       ctx.globalAlpha = clamp(1.6 - c.life, 0, 1);
       ctx.translate(c.x, c.y - 20);
       ctx.rotate(c.rot);
-      SpriteCache.blit(ctx, this.sprites.zombie(c.look, FRAME_FALL), 0, 20, LANE_SCALE[c.lane]);
+      SpriteCache.blit(ctx, this.sprites.zombie(c.look, FRAME_FALL), 0, 20, LANE_SCALE[c.lane] * DOG_DRAW);
       ctx.restore();
     }
   }
@@ -869,16 +868,8 @@ export class Renderer {
       ctx.strokeStyle = 'rgba(255,255,255,0.85)';
       ctx.lineWidth = 2;
       ctx.stroke();
-      // cabecita de zombi
-      ctx.fillStyle = '#9ed06b';
-      ctx.beginPath();
-      ctx.arc(cx - bw / 2 + 14, cy, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.arc(cx - bw / 2 + 16, cy - 2, 2.6, 0, Math.PI * 2);
-      ctx.arc(cx - bw / 2 + 11, cy - 1.5, 1.8, 0, Math.PI * 2);
-      ctx.fill();
+      // cabecita de Jocko: "perritos necesarios"
+      drawLeaderIcon(ctx, cx - bw / 2 + 14, cy + 1, 7.5);
       ctx.fillStyle = '#ffffff';
       ctx.fillText(label, cx - bw / 2 + 27, cy + 6);
       ctx.beginPath();
@@ -916,7 +907,7 @@ export class Renderer {
     const compact = W < 520;
     ctx.lineJoin = 'round';
 
-    // Destello rojo al perder zombis
+    // Destello rojo al perder perritos
     if (w.hurt > 0) {
       const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.max(W, H) * 0.75);
       g.addColorStop(0, 'rgba(255,40,60,0)');
@@ -925,7 +916,7 @@ export class Renderer {
       ctx.fillRect(0, 0, W, H);
     }
 
-    // Panel: horda + distancia
+    // Panel: jauría + distancia
     const x = 12;
     const y = 12;
     const pw = compact ? 150 : 190;
@@ -933,27 +924,11 @@ export class Renderer {
     ctx.fillStyle = 'rgba(22, 18, 38, 0.62)';
     rr(ctx, x, y, pw, ph, 16);
     ctx.fill();
-    // icono de zombi
+    // icono: Jocko
     const ix = x + (compact ? 26 : 32);
     const iy = y + ph / 2;
-    const ir = compact ? 15 : 19;
-    ctx.fillStyle = '#9ed06b';
-    ctx.beginPath();
-    ctx.arc(ix, iy, ir, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ff8a2a';
-    ctx.beginPath();
-    ctx.arc(ix, iy - ir * 0.15, ir, Math.PI * 1.05, Math.PI * 1.95);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(ix + ir * 0.35, iy + ir * 0.1, ir * 0.3, 0, Math.PI * 2);
-    ctx.arc(ix - ir * 0.25, iy + ir * 0.15, ir * 0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#2a1f2b';
-    ctx.beginPath();
-    ctx.arc(ix + ir * 0.42, iy + ir * 0.12, ir * 0.12, 0, Math.PI * 2);
-    ctx.fill();
+    const ir = compact ? 14 : 18;
+    drawLeaderIcon(ctx, ix, iy + 2, ir);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 ${compact ? 26 : 32}px ${FONT}`;
@@ -962,7 +937,7 @@ export class Renderer {
     const cw = ctx.measureText(count).width;
     ctx.font = `600 ${compact ? 10 : 11}px ${FONT}`;
     ctx.fillStyle = '#b9f59a';
-    ctx.fillText('ZOMBIS', ix + ir + 12 + cw, iy - (compact ? 4 : 6));
+    ctx.fillText('PERRITOS', ix + ir + 12 + cw, iy - (compact ? 4 : 6));
     ctx.fillStyle = '#ffffff';
     ctx.font = `600 ${compact ? 13 : 15}px ${FONT}`;
     ctx.fillText(`${w.stats.distance} m`, ix + ir + 12 + cw, iy + (compact ? 10 : 12));

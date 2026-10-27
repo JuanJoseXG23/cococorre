@@ -64,7 +64,7 @@
 @keyframes roadMove { to { background-position: 56px 0; } }
 .cover-coco-pet { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); }
 
-/* Portada de Jockombi (módulo zombie-rush) */
+/* Portada de Jockombi */
 .cover-zombie { position: absolute; inset: 0; background: linear-gradient(180deg, #1d1d48 0%, #4b3b7d 60%, #8a5aa0 100%); }
 .cover-zombie-moon { position: absolute; right: 12%; top: 12%; width: 18%; aspect-ratio: 1; border-radius: 50%; background: #f3f0d8; box-shadow: 0 0 40px rgba(243, 240, 216, 0.5); }
 .cover-zombie-city {
@@ -101,7 +101,7 @@
 }
 
 /* =====================================================================
-   Jockombi (módulo zombie-rush)
+   Jockombi
    ===================================================================== */
 .zr-screen { background: radial-gradient(120% 80% at 50% 0%, #4b3b7d 0%, #241d3f 55%, #15112a 100%); color: #f4f0ff; }
 .zr-screen > .content.zr-content { max-width: 480px; }

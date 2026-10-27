@@ -7,8 +7,8 @@ import { shareOnWhatsApp } from '../rewards/share';
 import { CocoFace } from '../components/Logo';
 import { CHARACTERS, isUnlocked } from '../game/characters';
 import { GAME_NAME } from '../config';
-import { ZOMBIE_RUSH_NAME } from '../games/zombie-rush/meta';
-import { useZombieProgress } from '../games/zombie-rush/useZombieProgress';
+import { JOCKOMBI_NAME } from '../games/jockombi/meta';
+import { useJockombiProgress } from '../games/jockombi/useJockombiProgress';
 import type { Nav } from '../App';
 
 export function formatDate(ts: { toDate: () => Date } | null | undefined): string {
@@ -18,7 +18,7 @@ export function formatDate(ts: { toDate: () => Date } | null | undefined): strin
 
 export function ProfileScreen({ nav }: { nav: Nav }) {
   const { profile, user } = useAuth();
-  const zr = useZombieProgress(user?.uid);
+  const zr = useJockombiProgress(user?.uid);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
 
@@ -62,11 +62,11 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
         </div>
 
         <div className="card">
-          <h2>{ZOMBIE_RUSH_NAME}</h2>
+          <h2>{JOCKOMBI_NAME}</h2>
           <div className="stats">
             <div className="stat"><div className="label">Mejor distancia</div><div className="value">{zr.stats.bestDistance} m</div></div>
-            <div className="stat"><div className="label">Mayor horda</div><div className="value">{zr.stats.maxHorde}</div></div>
-            <div className="stat"><div className="label">Convertidos</div><div className="value">{zr.stats.totalConverted}</div></div>
+            <div className="stat"><div className="label">Mayor jauría</div><div className="value">{zr.stats.maxHorde}</div></div>
+            <div className="stat"><div className="label">Contagiados</div><div className="value">{zr.stats.totalConverted}</div></div>
             <div className="stat"><div className="label">Partidas</div><div className="value">{zr.stats.gamesPlayed}</div></div>
             <div className="stat"><div className="label">Gemas</div><div className="value">{zr.stats.totalGems}</div></div>
             <div className="stat"><div className="label">Récord logrado</div><div className="value" style={{ fontSize: '1rem' }}>{formatDate(zr.stats.bestDistanceAt)}</div></div>

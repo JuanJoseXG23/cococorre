@@ -1,10 +1,10 @@
-import { ZOMBIE_RUSH_LOGO, ZOMBIE_RUSH_NAME } from './meta';
+import { JOCKOMBI_LOGO, JOCKOMBI_NAME } from './meta';
 
 /** Logotipo tipográfico: primera parte en verde "tóxico" con gotas, la segunda en naranja. */
-export function ZombieLogo({ size = 'big' }: { size?: 'big' | 'small' }) {
-  const [first, second] = ZOMBIE_RUSH_LOGO;
+export function JockombiLogo({ size = 'big' }: { size?: 'big' | 'small' }) {
+  const [first, second] = JOCKOMBI_LOGO;
   return (
-    <div className={`zr-logo ${size}`} aria-label={ZOMBIE_RUSH_NAME}>
+    <div className={`zr-logo ${size}`} aria-label={JOCKOMBI_NAME}>
       <span className="zr-logo-word">
         <span className="zr-logo-a">
           {first}

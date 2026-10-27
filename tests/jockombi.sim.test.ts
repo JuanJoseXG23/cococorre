@@ -1,10 +1,10 @@
 // Pruebas de la simulación de Jockombi (sin navegador).
-// Ejecutar:  npm run test:zombie
+// Ejecutar:  npm run test:jockombi
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { World } from '../src/games/zombie-rush/engine/world';
-import { HORDE_MAX, STEP, POWERS, VEHICLES } from '../src/games/zombie-rush/engine/constants';
-import { jumpRange, speedAt } from '../src/games/zombie-rush/engine/physics';
+import { World } from '../src/games/jockombi/engine/world';
+import { HORDE_MAX, STEP, POWERS, VEHICLES } from '../src/games/jockombi/engine/constants';
+import { jumpRange, speedAt } from '../src/games/jockombi/engine/physics';
 
 /** Piloto automático sencillo: salta ante bordes, bombas y vehículos que no puede aplastar. */
 function makeBot() {
@@ -56,17 +56,17 @@ function run(seed: number, seconds: number, pilot?: (w: World) => void) {
   return { w, maxSeen };
 }
 
-test('con piloto automático la horda crece y recorre una buena distancia', () => {
+test('con piloto automático la jauría crece y recorre una buena distancia', () => {
   const results = [11, 22, 33, 44, 55].map((seed) => run(seed, 150, makeBot()));
   for (const { w, maxSeen } of results) {
-    assert.ok(maxSeen <= HORDE_MAX, 'nunca supera el máximo de la horda');
+    assert.ok(maxSeen <= HORDE_MAX, 'nunca supera el máximo de la jauría');
     assert.equal(w.stats.maxHorde, maxSeen, 'maxHorde coincide con lo visto');
   }
   const avgDist = results.reduce((s, r) => s + r.w.stats.distance, 0) / results.length;
   const avgHorde = results.reduce((s, r) => s + r.w.stats.maxHorde, 0) / results.length;
   console.log('distancias:', results.map((r) => `${r.w.stats.distance}m/${r.w.stats.maxHorde}z/${r.w.state}`).join(' '));
   assert.ok(avgDist > 600, `distancia media ${avgDist}`);
-  assert.ok(avgHorde >= 10, `horda máxima media ${avgHorde}`);
+  assert.ok(avgHorde >= 10, `jauría máxima media ${avgHorde}`);
   for (const { w } of results) {
     assert.ok(w.stats.converted >= w.stats.maxHorde - 1 - w.stats.powerups * 5, 'los zombis vienen de conversiones o clones');
   }
@@ -141,7 +141,7 @@ test('vehículo: se aplasta con zombis suficientes; si no, los que chocan se pie
   const lead = w.horde[0];
   w.vehicles.push({ id: 9001, kind: 'car', x: lead.x + 60, w: 120, h: 60, req: 99, vx: 0, minX: 0, smashed: false, smashT: 0, color: 0 });
   for (let i = 0; i < 60 && w.state === 'running'; i++) w.step(STEP);
-  assert.equal(w.horde.length, 0, 'sin zombis suficientes, la horda de 1 se pierde');
+  assert.equal(w.horde.length, 0, 'sin perritos suficientes, la jauría de 1 se pierde');
   assert.notEqual(w.state, 'running');
 
   const w2 = new World({ seed: 8 });

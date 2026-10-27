@@ -10,7 +10,7 @@ export type CloudState = 'loading' | 'ok' | 'unavailable';
  * Estadísticas de Jockombi del usuario: nube + partidas pendientes de
  * subir. Reintenta la sincronización al volver la conexión y cada 30 s.
  */
-export function useZombieProgress(uid: string | undefined) {
+export function useJockombiProgress(uid: string | undefined) {
   const [cloud, setCloud] = useState<ZombieStats | null>(() => (uid ? getCachedStats(uid) : null));
   const [cloudState, setCloudState] = useState<CloudState>('loading');
   const [pending, setPendingList] = useState(() => (uid ? getPending(uid) : []));

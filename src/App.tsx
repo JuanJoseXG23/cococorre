@@ -18,12 +18,12 @@ import type { GameResult } from './game/types';
 export type { Nav, Screen } from './platform/navigation';
 
 // El motor de Jockombi se descarga sólo al abrir el juego.
-const ZombieRushScreen = lazy(() => import('./games/zombie-rush/ZombieRushScreen').then((m) => ({ default: m.ZombieRushScreen })));
+const JockombiScreen = lazy(() => import('./games/jockombi/JockombiScreen').then((m) => ({ default: m.JockombiScreen })));
 
 export function App() {
   const { user, profile, profileError, retryProfile, loading, slow } = useAuth();
   const [retrying, setRetrying] = useState(false);
-  // Al recargar con #zombie-rush, #rewards... se abre esa pantalla directamente.
+  // Al recargar con #jockombi, #rewards... se abre esa pantalla directamente.
   const [screen, setScreen] = useState<Screen>(() => screenFromHash(location.hash));
   const [result, setResult] = useState<GameResult | null>(null);
   const [gameKey, setGameKey] = useState(0);
@@ -129,10 +129,10 @@ export function App() {
       return result ? <GameOverScreen result={result} nav={nav} onPlayAgain={() => nav('game')} /> : <MenuScreen nav={nav} />;
     case 'cococorre':
       return <MenuScreen nav={nav} />;
-    case 'zombie':
+    case 'jockombi':
       return (
-        <Suspense fallback={<div className="screen zr-screen"><div className="content"><Loading text="Cargando la horda..." /></div></div>}>
-          <ZombieRushScreen nav={nav} />
+        <Suspense fallback={<div className="screen zr-screen"><div className="content"><Loading text="Cargando la jauría..." /></div></div>}>
+          <JockombiScreen nav={nav} />
         </Suspense>
       );
     case 'rewards':

@@ -2,13 +2,13 @@
   "name": "cococorre",
   "private": true,
   "version": "1.0.0",
-  "description": "CoCo Arcade — minijuegos hechos con amor para María Isabel: CoCoCorre y Zombie Rush",
+  "description": "CoCo Arcade — minijuegos hechos con amor para María Isabel: CoCoCorre y Jockombi",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test:zombie": "rolldown tests/zombie-rush.sim.test.ts --platform node --format esm --file node_modules/.cache/zombie-rush.sim.mjs --log-level warn && node node_modules/.cache/zombie-rush.sim.mjs"
+    "test:jockombi": "rolldown tests/jockombi.sim.test.ts --platform node --format esm --file node_modules/.cache/jockombi.sim.mjs --log-level warn && node node_modules/.cache/jockombi.sim.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

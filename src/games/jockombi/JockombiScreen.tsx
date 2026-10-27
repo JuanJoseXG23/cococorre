@@ -4,14 +4,14 @@ import { BackIcon, PauseIcon, SoundIcon } from '../../components/Icons';
 import { Confetti } from '../../components/Decorations';
 import { isMuted, setMuted } from '../../game/audio';
 import type { Nav } from '../../platform/navigation';
-import { ZombieRushEngine } from './engine/Engine';
+import { JockombiEngine } from './engine/Engine';
 import { POWERS, VEHICLES } from './engine/constants';
 import type { RunStats } from './engine/types';
 import { HordePreview } from './HordePreview';
-import { LEADER_NAME, ZOMBIE_RUSH_NAME } from './meta';
+import { LEADER_NAME, JOCKOMBI_NAME } from './meta';
 import { newRunId, recordRun, toPendingRun, type SyncResult, type ZombieStats } from './progress';
-import { useZombieProgress } from './useZombieProgress';
-import { ZombieLogo } from './ZombieLogo';
+import { useJockombiProgress } from './useJockombiProgress';
+import { JockombiLogo } from './JockombiLogo';
 
 type Phase = 'home' | 'play' | 'over';
 
@@ -22,9 +22,9 @@ interface Finished {
 }
 
 /** Jockombi: inicio → partida → resultados, dentro de una sola pantalla de la plataforma. */
-export function ZombieRushScreen({ nav }: { nav: Nav }) {
+export function JockombiScreen({ nav }: { nav: Nav }) {
   const { user } = useAuth();
-  const progress = useZombieProgress(user?.uid);
+  const progress = useJockombiProgress(user?.uid);
   const [phase, setPhase] = useState<Phase>('home');
   const [runKey, setRunKey] = useState(0);
   const [finished, setFinished] = useState<Finished | null>(null);
@@ -88,20 +88,20 @@ function HomeView({ stats, pending, cloud, onPlay, onMenu }: {
           <span style={{ width: 42 }} />
         </div>
 
-        <ZombieLogo />
+        <JockombiLogo />
         <div className="zr-hero">
-          <HordePreview count={9} night className="zr-hero-canvas" />
+          <HordePreview count={8} night className="zr-hero-canvas" />
         </div>
         <p className="zr-tagline">
-          Guía a {LEADER_NAME} por la ciudad, convierte civiles y haz crecer la horda más grande.
+          Guía a {LEADER_NAME}, el Border Collie zombi, contagia a otros perritos y haz crecer la jauría más grande.
         </p>
 
         <button ref={playRef} className="btn big block zr-play" onClick={onPlay}>JUGAR</button>
 
         <div className="zr-stats">
           <div className="zr-stat"><span>Récord</span><strong>{stats.bestDistance} m</strong></div>
-          <div className="zr-stat"><span>Mayor horda</span><strong>{stats.maxHorde}</strong></div>
-          <div className="zr-stat"><span>Convertidos</span><strong>{stats.totalConverted}</strong></div>
+          <div className="zr-stat"><span>Mayor jauría</span><strong>{stats.maxHorde}</strong></div>
+          <div className="zr-stat"><span>Contagiados</span><strong>{stats.totalConverted}</strong></div>
           <div className="zr-stat"><span>Partidas</span><strong>{stats.gamesPlayed}</strong></div>
         </div>
         {(pending > 0 || cloud === 'unavailable') && (
@@ -116,15 +116,15 @@ function HomeView({ stats, pending, cloud, onPlay, onMenu }: {
           <h2>Cómo se juega</h2>
           <ul className="zr-howto">
             <li><b>Saltar:</b> toca la pantalla, clic, Espacio o ↑. <b>Mantén</b> para saltar más alto y más lejos.</li>
-            <li><b>Civiles:</b> tócalos para convertirlos. Cada uno se une a tu horda.</li>
-            <li><b>Huecos y bombas:</b> los zombis que caen o están cerca de la explosión se pierden.</li>
+            <li><b>Perritos:</b> tócalos para contagiarlos. Cada uno se une a tu jauría.</li>
+            <li><b>Huecos y bombas:</b> los perritos que caen o están cerca de la explosión se pierden.</li>
             <li>
-              <b>Vehículos:</b> el número indica cuántos zombis necesitas para aplastarlo
+              <b>Vehículos:</b> el número indica cuántos perritos necesitas para aplastarlo
               (auto {VEHICLES.car.req}, furgoneta {VEHICLES.van.req}, bus {VEHICLES.bus.req}, blindado {VEHICLES.armored.req}).
               Si no alcanzas, ¡sáltalo o cae sobre el techo!
             </li>
             <li><b>Cajas ?:</b> {Object.values(POWERS).map((p) => p.label).join(', ')}.</li>
-            <li>La partida termina cuando no queda ningún zombi. <b>P</b> o <b>Esc</b> pausa.</li>
+            <li>La partida termina cuando no queda ningún perrito. <b>P</b> o <b>Esc</b> pausa.</li>
           </ul>
         </div>
         {portrait && <p className="zr-note">Consejo: gira el teléfono para ver más calle.</p>}
@@ -143,7 +143,7 @@ function PlayView({ best, onGameOver, onRestart, onHome, onMenu }: {
   onMenu: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const engineRef = useRef<ZombieRushEngine | null>(null);
+  const engineRef = useRef<JockombiEngine | null>(null);
   const [paused, setPaused] = useState(false);
   const [muted, setMutedState] = useState(isMuted());
   const [hint, setHint] = useState(true);
@@ -160,7 +160,7 @@ function PlayView({ best, onGameOver, onRestart, onHome, onMenu }: {
 
   useEffect(() => {
     const canvas = canvasRef.current!;
-    const engine = new ZombieRushEngine(canvas, {
+    const engine = new JockombiEngine(canvas, {
       bestDistance: best,
       onGameOver: (r) => latest.current.onGameOver(r),
       onPauseKey: () => latest.current.togglePause(),
@@ -191,7 +191,7 @@ function PlayView({ best, onGameOver, onRestart, onHome, onMenu }: {
 
   return (
     <div className="game-root zr-root">
-      <canvas ref={canvasRef} tabIndex={0} aria-label={`Juego ${ZOMBIE_RUSH_NAME}`} />
+      <canvas ref={canvasRef} tabIndex={0} aria-label={`Juego ${JOCKOMBI_NAME}`} />
       <div className="zr-hud-actions">
         <button className="icon-btn zr-icon" onClick={toggleMute} aria-label={muted ? 'Activar sonido' : 'Silenciar'}>
           <SoundIcon muted={muted} />
@@ -207,11 +207,11 @@ function PlayView({ best, onGameOver, onRestart, onHome, onMenu }: {
         <div className="pause-overlay zr-pause">
           <div className="zr-card center" style={{ width: '100%', maxWidth: 340 }}>
             <h2>En pausa</h2>
-            <p className="zr-muted">La horda te espera.</p>
+            <p className="zr-muted">La jauría te espera.</p>
             <div className="menu-buttons">
               <button className="btn big block zr-play" onClick={() => setPause(false)}>Continuar</button>
               <button className="btn sage block" onClick={onRestart}>Reiniciar</button>
-              <button className="btn ghost block" onClick={onHome}>Inicio de {ZOMBIE_RUSH_NAME}</button>
+              <button className="btn ghost block" onClick={onHome}>Inicio de {JOCKOMBI_NAME}</button>
               <button className="btn ghost block" onClick={onMenu}>Menú de juegos</button>
             </div>
             <p className="zr-muted" style={{ fontSize: '0.85rem', marginBottom: 0 }}>
@@ -284,7 +284,7 @@ function ResultsView({ data, onPlayAgain, onHome, onMenu }: {
     <div className="screen zr-screen">
       {newRecord && run.distance > 0 && <Confetti count={40} />}
       <div className="content zr-content zr-results">
-        <h1 className="zr-over-title">¡La horda cayó!</h1>
+        <h1 className="zr-over-title">¡La jauría cayó!</h1>
         <div className="zr-card center zr-pop">
           <div className="zr-muted">Distancia</div>
           <div className="zr-big">{distance} m</div>
@@ -296,8 +296,8 @@ function ResultsView({ data, onPlayAgain, onHome, onMenu }: {
           </div>
         </div>
         <div className="zr-stats">
-          <div className={`zr-stat ${newHorde ? 'hot' : ''}`}><span>Mayor horda</span><strong>{run.maxHorde}</strong>{newHorde && <em>récord</em>}</div>
-          <div className="zr-stat"><span>Convertidos</span><strong>{run.converted}</strong></div>
+          <div className={`zr-stat ${newHorde ? 'hot' : ''}`}><span>Mayor jauría</span><strong>{run.maxHorde}</strong>{newHorde && <em>récord</em>}</div>
+          <div className="zr-stat"><span>Contagiados</span><strong>{run.converted}</strong></div>
           <div className="zr-stat"><span>Gemas</span><strong>{run.gems}</strong></div>
           <div className="zr-stat"><span>Vehículos</span><strong>{run.vehiclesSmashed}</strong></div>
         </div>

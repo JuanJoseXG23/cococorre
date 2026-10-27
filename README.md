@@ -5,7 +5,7 @@ Una plataforma de minijuegos hecha con amor para **María Isabel**. Desde el men
 | Juego | De qué se trata |
 |---|---|
 | **CoCoCorre** | Ayuda a **Coco** (un Pomerania) a cruzar calles, ríos y vías de tren, gana puntos y cámbialos por recompensas reales (abrazos, besos, Nucitas…). |
-| **Jockombi** | Endless runner: guía a **Zeta** por la ciudad, convierte civiles y haz crecer una horda de zombis que salta, esquiva huecos y bombas y aplasta vehículos. |
+| **Jockombi** | Endless runner: guía a **Jocko** (un Border Collie blue merle zombi) por la ciudad, contagia a otros perritos y haz crecer una jauría de perritos zombis que salta, esquiva huecos y bombas y aplasta vehículos. |
 
 > Novedades de la plataforma: ver [12. Plataforma de minijuegos](#12-plataforma-de-minijuegos) y [13. Jockombi](#13-jockombi).
 
@@ -134,7 +134,7 @@ leaderboard/{uid}               ← ranking público (copia del récord)
 admins/{uid}                    ← sólo se crea desde la consola de Firebase
 config/game                     ← mensajes y dificultad (editable por admin)
 
-users/{uid}/gameStats/zombie-rush          ← progreso de Jockombi (separado)
+users/{uid}/gameStats/zombie-rush          ← progreso de Jockombi (separado; el ID interno conserva el nombre original)
     bestDistance, maxHorde, totalConverted, totalGems, gamesPlayed,
     lastDistance, lastRunId, lastPlayedAt, bestDistanceAt, maxHordeAt, createdAt
 users/{uid}/gameStats/zombie-rush/runs/{runId}   ← una entrada por partida (inmutable)
@@ -170,7 +170,7 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 > **Límite honesto:** en cualquier juego que corre en el navegador, alguien con conocimientos técnicos podría enviar una puntuación falsa *dentro de los límites* (máximo 5.000 por partida y no más rápido de lo humanamente posible). Las **recompensas** sí quedan 100 % protegidas: nunca se pueden reclamar dos veces, ni pagar menos, ni gastar puntos que no se tienen. El administrador puede revisar el historial de partidas y ajustar puntos si ve algo raro.
 
 | Duplicar una partida de Jockombi (reintento, sin conexión) | `runs/{runId}` no puede existir antes y se crea en la misma operación que suma las estadísticas. |
-| Inventar récords de Jockombi | Las estadísticas deben salir exactamente de la partida registrada; topes por partida (horda ≤ 75, convertidos y gemas acordes a la distancia) y tiempo mínimo entre partidas (25 ms por metro). |
+| Inventar récords de Jockombi | Las estadísticas deben salir exactamente de la partida registrada; topes por partida (jauría ≤ 75, contagiados y gemas acordes a la distancia) y tiempo mínimo entre partidas (25 ms por metro). |
 
 Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (21 grupos de casos) — ver [Problemas frecuentes](#11-problemas-frecuentes) para ejecutarlas.
 
@@ -499,13 +499,14 @@ src/
 │   └── navigation.ts      # Pantallas y #hash de cada una
 ├── games/
 │   ├── cococorre/entry.tsx     # Registro de CoCoCorre (su código sigue en src/game y src/screens)
-│   └── zombie-rush/            # Módulo independiente de Jockombi (la carpeta y el ID de datos conservan el nombre original)
+│   └── jockombi/               # Módulo independiente de Jockombi
 │       ├── meta.ts             #   nombre provisional (cámbialo aquí)
 │       ├── entry.tsx           #   tarjeta del menú
-│       ├── ZombieRushScreen.tsx#   inicio, partida, pausa y resultados
+│       ├── JockombiScreen.tsx#   inicio, partida, pausa y resultados
 │       ├── progress.ts         #   Firestore + cola local sin conexión
 │       └── engine/             #   motor: world.ts (simulación pura), generator.ts, render.ts,
-│                               #   sprites.ts, input.ts, sfx.ts, physics.ts, constants.ts
+│                               #   sprites.ts (dibujo de los perritos), looks.ts (razas y Jocko),
+│                               #   input.ts, sfx.ts, physics.ts, constants.ts
 └── styles/platform.css    # estilos del menú y de Jockombi
 ```
 
@@ -524,27 +525,27 @@ src/
 3. Añade su pantalla en `src/platform/navigation.ts` (tipo `Screen` y `HASH_OF`) y en el `switch` de `src/App.tsx`.
 4. Si guarda progreso, usa `users/{uid}/gameStats/<juego>` y agrega sus reglas en `firestore.rules` (ver las de Jockombi como plantilla).
 
-**Recompensas y puntos:** la economía existente no cambió. Los puntos del saldo **sólo** se ganan en CoCoCorre (lo exigen las reglas) y las recompensas siguen siendo de una sola vez, en escalera. Jockombi tiene su propio progreso (récords, horda, convertidos, gemas) y **no** suma puntos al saldo. Si en el futuro se quiere que otros juegos aporten puntos, hay que diseñar una regla nueva en `users/{uid}` (p. ej. un tope diario por juego validado contra `gameStats`), no reutilizar `isGameUpdate`, que está atada a la partida de CoCoCorre.
+**Recompensas y puntos:** la economía existente no cambió. Los puntos del saldo **sólo** se ganan en CoCoCorre (lo exigen las reglas) y las recompensas siguen siendo de una sola vez, en escalera. Jockombi tiene su propio progreso (récords, jauría, contagiados, gemas) y **no** suma puntos al saldo. Si en el futuro se quiere que otros juegos aporten puntos, hay que diseñar una regla nueva en `users/{uid}` (p. ej. un tope diario por juego validado contra `gameStats`), no reutilizar `isGameUpdate`, que está atada a la partida de CoCoCorre.
 
 ## 13. Jockombi
 
 **Controles:** Espacio / ↑ / W / clic / tocar = saltar (**mantener** = salto más alto y largo). **P** o **Esc** = pausa. Botones en pantalla: sonido y pausa (continuar, reiniciar, inicio del juego, menú).
 
-**Reglas del juego** (todas ajustables en `src/games/zombie-rush/engine/constants.ts`):
+**Reglas del juego** (todas ajustables en `src/games/jockombi/engine/constants.ts`):
 
 | Elemento | Regla |
 |---|---|
-| Horda | Empieza con 1 zombi (Zeta). Cada civil tocado se une a la horda (máx. 75; después da gemas). Los zombis repiten el salto del líder al pasar por el mismo punto. |
-| Huecos | Los zombis que caen se pierden. Su ancho se calcula con el alcance real del salto a la velocidad de ese punto. |
-| Bombas | Explotan al tocarlas: se pierden los zombis en un radio de ~58 px. |
-| Vehículos | Auto **3**, furgoneta **6**, bus **10**, blindado **15** zombis para aplastarlo (da gemas y, los grandes, pasajeros que se unen). Si no alcanza, los zombis que chocan de frente se pierden: hay que saltarlo o caer sobre el techo. Desde ~750 m algunos vienen de frente (aviso «!» en el borde). |
-| Cajas ? | **Gigante** (8 s, aplasta todo y pisa bombas), **Imán** (10 s, atrae gemas y civiles), **Escudo** (hasta 15 s, absorbe un golpe), **Clonación** (+5 zombis). |
+| Jauría | Empieza con Jocko. Cada perrito de la calle que toca se contagia y se une a la jauría conservando su raza (12 razas; máx. 75; después da gemas). Los perritos repiten el salto de Jocko al pasar por el mismo punto. |
+| Huecos | Los perritos que caen se pierden. Su ancho se calcula con el alcance real del salto a la velocidad de ese punto. |
+| Bombas | Explotan al tocarlas: se pierden los perritos en un radio de ~58 px. |
+| Vehículos | Auto **3**, furgoneta **6**, bus **10**, blindado **15** perritos para aplastarlo (da gemas y, los grandes, perritos pasajeros que se unen). Si no alcanza, los que chocan de frente se pierden: hay que saltarlo o caer sobre el techo. Desde ~750 m algunos vienen de frente (aviso «!» en el borde). |
+| Cajas ? | **Gigante** (8 s, Jocko crece, aplasta todo y pisa bombas), **Imán** (10 s, atrae gemas y perritos), **Escudo** (hasta 15 s, absorbe un golpe), **Clonación** (+5 perritos zombis). |
 | Dificultad | La velocidad sube de 11 a 20 m/s hasta los 2.500 m y ahí se detiene. Con la distancia aparecen huecos más anchos, bombas dobles, vehículos más exigentes y cambia el ambiente cada 900 m (Centro, Atardecer, Noche, Barrio tóxico). |
-| Fin | Cuando no queda ningún zombi. |
+| Fin | Cuando no queda ningún perrito. |
 
 **Progreso:** al terminar, la partida se guarda primero en el dispositivo y luego en Firestore. Sin conexión (o si las reglas aún no están publicadas) se queda en cola y se sincroniza sola, en orden y sin duplicarse.
 
-**Pruebas del motor (sin navegador):** `npm run test:zombie` — simula partidas completas con un piloto automático y verifica salto, horda, vehículos, bombas, potenciadores, determinismo y que el generador nunca cree huecos imposibles.
+**Pruebas del motor (sin navegador):** `npm run test:jockombi` — simula partidas completas con un piloto automático y verifica salto, jauría, vehículos, bombas, potenciadores, determinismo y que el generador nunca cree huecos imposibles.
 
 ---
 
