@@ -66,7 +66,9 @@ export class Generator {
   }
   /** Pista libre antes y después de cada peligro. */
   private runway(extra = 0) {
-    return this.speed * 0.5 + 90 + extra;
+    // Se acorta con la dificultad: los peligros llegan casi seguidos.
+    const d = this.d;
+    return this.speed * lerp(0.42, 0.3, d) + lerp(80, 50, d) + extra;
   }
 
   private chunk() {
@@ -77,10 +79,10 @@ export class Generator {
       return;
     }
     const weights: [ChunkKind, number][] = [
-      ['strays', 3.2 - 1.3 * d],
-      ['gap', 1.5 + 1.7 * d],
-      ['bomb', this.meters < 60 ? 0 : 1 + 1.4 * d],
-      ['vehicle', this.meters < 40 ? 0.6 : 1.7 + 0.6 * d],
+      ['strays', 2.4 - 1.2 * d],
+      ['gap', 2 + 2 * d],
+      ['bomb', this.meters < 40 ? 0 : 1.4 + 1.6 * d],
+      ['vehicle', this.meters < 40 ? 0.6 : 1.8 + 0.8 * d],
       ['platforms', 1.1],
     ];
     // Evita repetir el mismo peligro dos veces seguidas.
@@ -122,7 +124,7 @@ export class Generator {
     this.w.peds.push({
       id: this.w.nextId(), look, x, y, minX, maxX,
       vx: 0, lane: Math.floor(r() * 3), phase: r(), panic: false,
-      run: 30 + l.legH * 4 + r() * 30,
+      run: (70 + l.legH * 6 + r() * 40) * lerp(1, 1.35, this.d),
     });
   }
 
@@ -142,10 +144,18 @@ export class Generator {
     const r = this.rng;
     const start = this.cursor;
     this.flat(len);
-    const n = count ?? 2 + Math.floor(r() * 3) + (this.d > 0.5 && r() < 0.5 ? 1 : 0);
+    // Pocos perritos sueltos: cada uno cuenta.
+    const n = count ?? 1 + Math.floor(r() * (2.6 - this.d));
     for (let k = 0; k < n; k++) {
       const x = start + 70 + ((len - 140) * (k + 0.5)) / n + (r() - 0.5) * 30;
       this.ped(x, 0, start + 10, start + len - 10);
+    }
+    // A veces uno espera encima de una caseta: hay que saltar justo para alcanzarlo.
+    if (r() < 0.35) {
+      const px = start + 120 + r() * (len - 320);
+      const py = -(50 + r() * 25);
+      this.w.platforms.push({ x0: px, x1: px + 110, y: py, kind: 'awning', color: Math.floor(r() * 4) });
+      this.ped(px + 55, py, px + 8, px + 102);
     }
     if (r() < 0.7) this.gemLine(start + 40 + r() * 80, -24, 4 + Math.floor(r() * 3), 36);
   }
@@ -154,19 +164,22 @@ export class Generator {
     const r = this.rng;
     const d = this.d;
     this.flat(this.runway());
-    const holes = d > 0.35 && r() < 0.3 ? 2 : 1;
+    // Con dificultad, series de 2 o 3 huecos con poca calle entre ellos.
+    const holes = d > 0.2 && r() < 0.25 + 0.35 * d ? (d > 0.55 && r() < 0.4 ? 3 : 2) : 1;
     for (let h = 0; h < holes; h++) {
       const speed = this.speed;
       const tap = jumpRange(speed, false);
       // Ancho máximo con salto corto: deja margen para la caja del zombi y para reaccionar.
-      let maxW = lerp(0.5, 0.78, d) * (tap - 40);
-      // Con dificultad alta, a veces hace falta el salto largo (mantener pulsado).
-      if (d > 0.5 && r() < 0.3) maxW = (jumpRange(speed, true) - 50) * 0.85;
-      const w = 90 + r() * Math.max(0, maxW - 90);
+      let maxW = lerp(0.62, 0.88, d) * (tap - 30);
+      // A veces hace falta el salto largo (mantener pulsado).
+      if (d > 0.25 && r() < 0.2 + 0.25 * d) maxW = (jumpRange(speed, true) - 50) * 0.88;
+      const minW = lerp(100, 140, d);
+      const w = minW + r() * Math.max(0, maxW - minW);
       const x0 = this.cursor;
-      this.gemArc(x0 - 30, x0 + w + 30, Math.min(110, w * 0.45));
+      this.gemArc(x0 - 30, x0 + w + 30, Math.min(70, w * 0.4));
       this.cursor += w;
-      this.flat(h < holes - 1 ? this.runway(40) : this.runway());
+      // Entre huecos de una serie: lo justo para aterrizar y volver a saltar.
+      this.flat(h < holes - 1 ? Math.max(120, speed * 0.28) : this.runway());
     }
   }
 
@@ -174,20 +187,17 @@ export class Generator {
     const r = this.rng;
     const d = this.d;
     this.flat(this.runway());
-    const two = d > 0.45 && r() < 0.5;
+    // Filas de bombas: hay que encadenar saltos con buen ritmo.
+    const n = d > 0.15 && r() < 0.3 + 0.4 * d ? (d > 0.5 && r() < 0.45 ? 3 : 2) : 1;
     const b1 = this.cursor + 40;
     this.w.bombs.push({ id: this.w.nextId(), x: b1, y: 0, exploded: false });
-    this.gemArc(b1 - 70, b1 + 70, 70, 3, -40);
-    if (two) {
-      // Separadas lo suficiente para aterrizar y volver a saltar.
-      const gap = jumpRange(this.speed, true) + 110;
-      this.flat(gap);
-      const b2 = this.cursor;
-      this.w.bombs.push({ id: this.w.nextId(), x: b2, y: 0, exploded: false });
-      this.flat(60);
-    } else {
-      this.flat(80);
+    this.gemArc(b1 - 70, b1 + 70, 50, 3, -40);
+    for (let i = 1; i < n; i++) {
+      // Separadas lo justo para aterrizar y volver a saltar.
+      this.flat(jumpRange(this.speed, false) + lerp(130, 80, d) + (i === 1 ? 40 : 0));
+      this.w.bombs.push({ id: this.w.nextId(), x: this.cursor, y: 0, exploded: false });
     }
+    this.flat(n > 1 ? 60 : 80);
     this.flat(this.runway());
   }
 
@@ -199,8 +209,8 @@ export class Generator {
     const spec = VEHICLES[kind];
     const horde = this.w.hordeSize();
     // Si a la jauría le faltan perritos, a veces hay perritos antes para alcanzarlo.
-    if (horde < spec.req && r() < 0.7) this.strays(420 + r() * 160, Math.min(5, 2 + Math.floor(r() * (spec.req - horde))));
-    const moving = (kind === 'car' || kind === 'van') && d > 0.3 && r() < 0.35;
+    if (horde < spec.req && r() < 0.45) this.strays(420 + r() * 160, Math.min(3, 1 + Math.floor(r() * (spec.req - horde))));
+    const moving = (kind === 'car' || kind === 'van') && d > 0.2 && r() < 0.45;
     const rw = this.runway();
     let x: number;
     let minX: number;
@@ -219,7 +229,7 @@ export class Generator {
     }
     this.w.vehicles.push({
       id: this.w.nextId(), kind, x, w: spec.w, h: spec.h, req: spec.req,
-      vx: moving ? -(110 + 140 * d) : 0, minX, smashed: false, smashT: 0, color: Math.floor(r() * 4),
+      vx: moving ? -(140 + 180 * d) : 0, minX, smashed: false, smashT: 0, color: Math.floor(r() * 4),
     });
     // Gemas sobre el techo: premian caer encima.
     if (!moving) this.gemLine(x + spec.w / 2 - 36, -spec.h - 26, 3, 36);
@@ -233,13 +243,13 @@ export class Generator {
     const n = 1 + Math.floor(r() * 2.4);
     const overPit = d > 0.25 && r() < 0.5;
     const start = this.cursor;
-    const reach = jumpHeight(false) - 40;
+    const reach = jumpHeight(true) - 45;
     let x = start + (overPit ? 60 : 40);
     let lastY = 0;
     for (let i = 0; i < n; i++) {
       const pw = 190 + r() * 120;
-      // Cada plataforma se alcanza con un salto corto desde la anterior (o desde la calle).
-      let py = -(95 + r() * 55);
+      // Cada plataforma se alcanza con un salto largo desde la anterior (o desde la calle).
+      let py = -(70 + r() * 50);
       if (py < lastY - reach) py = lastY - reach;
       const p: Platform = { x0: x, x1: x + pw, y: py, kind: r() < 0.5 ? 'scaffold' : 'awning', color: Math.floor(r() * 4) };
       this.w.platforms.push(p);

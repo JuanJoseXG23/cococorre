@@ -398,7 +398,7 @@ export class World {
     const magnet = this.power?.kind === 'magnet';
     for (const p of this.peds) {
       const ahead = p.x - lx;
-      if (!p.panic && ahead < 330) p.panic = true;
+      if (!p.panic && ahead < 420) p.panic = true;
       let vx = p.panic ? p.run : Math.sin(this.time * 0.8 + p.id) * 22;
       if (magnet && ahead > -20 && ahead < 300) vx = -190;
       p.x = clamp(p.x + vx * dt, p.minX, p.maxX);
@@ -417,8 +417,9 @@ export class World {
       if (p.x > lx + 60 || p.x < back - 40) continue;
       for (let i = 0; i < this.horde.length; i++) {
         const z = this.horde[i];
-        const reach = 16 + (giant && i === 0 ? 30 : 0);
-        const reachY = 32 + (giant && i === 0 ? 50 : 0);
+        // Hay que tocarlo casi a su altura: si la jauría lo salta, se escapa.
+        const reach = 13 + (giant && i === 0 ? 30 : 0);
+        const reachY = 24 + (giant && i === 0 ? 50 : 0);
         if (Math.abs(z.x - p.x) < reach && Math.abs(z.y - p.y) < reachY) {
           this.peds.splice(k, 1);
           this.convert(p);
@@ -615,7 +616,7 @@ export class World {
 
   private randomPower(): PowerKind {
     const small = this.horde.length < 10;
-    const table: [PowerKind, number][] = [['clone', small ? 3 : 1.4], ['giant', 2], ['magnet', 2], ['shield', 2]];
+    const table: [PowerKind, number][] = [['clone', small ? 2 : 1], ['giant', 2], ['magnet', 2], ['shield', 2]];
     const total = table.reduce((s, [, w]) => s + w, 0);
     let r = this.rng() * total;
     for (const [k, w] of table) {

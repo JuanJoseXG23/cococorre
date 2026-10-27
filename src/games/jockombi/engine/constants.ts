@@ -16,10 +16,11 @@ export const STEP = 1 / 120;
 export const MAX_STEPS_PER_FRAME = 12;
 
 // ---------- Salto ----------
-export const GRAVITY = 2600;
-export const JUMP_VELOCITY = 880;
+// Saltos bajos y rápidos (toque ≈ 2 perritos de alto; mantener ≈ 3,7).
+export const GRAVITY = 3300;
+export const JUMP_VELOCITY = 700;
 /** Mientras se mantiene pulsado (y sube), la gravedad se reduce a este factor. */
-export const HOLD_GRAVITY = 0.42;
+export const HOLD_GRAVITY = 0.5;
 /** Tiempo máximo que cuenta mantener pulsado. */
 export const MAX_HOLD = 0.24;
 /** Margen para saltar justo después de salir de un borde. */
@@ -30,11 +31,11 @@ export const JUMP_BUFFER = 0.12;
 export const EDGE_TOLERANCE = 6;
 
 // ---------- Velocidad y dificultad ----------
-export const BASE_SPEED = 330;
-export const MAX_SPEED = 600;
+export const BASE_SPEED = 350;
+export const MAX_SPEED = 620;
 export const PX_PER_METER = 30;
 /** Metros en los que la dificultad llega al máximo (después ya no sube). */
-export const DIFFICULTY_FULL_AT_M = 2500;
+export const DIFFICULTY_FULL_AT_M = 2000;
 
 // ---------- Jauría ----------
 /** Máximo de perritos en la jauría (rendimiento y equilibrio). Igual que en firestore.rules. */
@@ -66,15 +67,15 @@ export interface VehicleSpec {
 }
 
 export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
-  car: { label: 'Auto', w: 132, h: 60, req: 3, gems: 2, riders: 0, minDifficulty: 0 },
-  van: { label: 'Furgoneta', w: 164, h: 88, req: 6, gems: 3, riders: 1, minDifficulty: 0.12 },
-  bus: { label: 'Bus', w: 270, h: 112, req: 10, gems: 5, riders: 2, minDifficulty: 0.3 },
-  armored: { label: 'Blindado', w: 230, h: 120, req: 15, gems: 7, riders: 3, minDifficulty: 0.55 },
+  car: { label: 'Auto', w: 132, h: 60, req: 4, gems: 2, riders: 0, minDifficulty: 0 },
+  van: { label: 'Furgoneta', w: 164, h: 88, req: 8, gems: 3, riders: 1, minDifficulty: 0.1 },
+  bus: { label: 'Bus', w: 270, h: 104, req: 14, gems: 5, riders: 1, minDifficulty: 0.25 },
+  armored: { label: 'Blindado', w: 230, h: 110, req: 20, gems: 7, riders: 2, minDifficulty: 0.5 },
 };
 
 export const BOMB_RADIUS = 16;
 /** Radio de la explosión: los zombis dentro de él se pierden. */
-export const BLAST_RADIUS_X = 58;
+export const BLAST_RADIUS_X = 66;
 
 // ---------- Potenciadores ----------
 export type PowerKind = 'giant' | 'magnet' | 'shield' | 'clone';

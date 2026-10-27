@@ -122,7 +122,7 @@ test('mantener pulsado salta más alto que un toque', () => {
   };
   const tap = peak(1);
   const hold = peak(60);
-  assert.ok(hold > tap + 60, `toque ${tap.toFixed(0)} vs largo ${hold.toFixed(0)}`);
+  assert.ok(hold > tap + 50, `toque ${tap.toFixed(0)} vs largo ${hold.toFixed(0)}`);
 });
 
 test('no hay doble salto: pulsar en el aire no vuelve a impulsar', () => {
@@ -177,9 +177,18 @@ test('potenciadores: duran lo indicado y expiran; clonación suma 5', () => {
   assert.equal(w.horde.length, n + 5);
   w.activate('magnet');
   assert.equal(w.power?.kind, 'magnet');
-  for (let i = 0; i < Math.round((POWERS.magnet.duration - 0.5) / STEP); i++) w.step(STEP);
+  // Con piloto, para que la jauría no muera antes (al morir se pierde el potenciador).
+  const bot = makeBot();
+  const advance = (s: number) => {
+    for (let i = 0; i < Math.round(s / STEP); i++) {
+      bot(w);
+      w.step(STEP);
+    }
+  };
+  advance(POWERS.magnet.duration - 0.5);
+  assert.equal(w.state, 'running');
   assert.equal(w.power?.kind, 'magnet', 'sigue activo antes de tiempo');
-  for (let i = 0; i < Math.round(1 / STEP); i++) w.step(STEP);
+  advance(1);
   assert.equal(w.power, null, 'expiró');
 });
 

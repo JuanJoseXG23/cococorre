@@ -535,12 +535,13 @@ src/
 
 | Elemento | Regla |
 |---|---|
-| Jauría | Empieza con Jocko. Cada perrito de la calle que toca se contagia y se une a la jauría conservando su raza (12 razas; máx. 75; después da gemas). Los perritos repiten el salto de Jocko al pasar por el mismo punto. |
-| Huecos | Los perritos que caen se pierden. Su ancho se calcula con el alcance real del salto a la velocidad de ese punto. |
-| Bombas | Explotan al tocarlas: se pierden los perritos en un radio de ~58 px. |
-| Vehículos | Auto **3**, furgoneta **6**, bus **10**, blindado **15** perritos para aplastarlo (da gemas y, los grandes, perritos pasajeros que se unen). Si no alcanza, los que chocan de frente se pierden: hay que saltarlo o caer sobre el techo. Desde ~750 m algunos vienen de frente (aviso «!» en el borde). |
+| Jauría | Empieza con Jocko. Cada perrito de la calle que toca se contagia y se une a la jauría conservando su raza (12 razas; máx. 75; después da gemas). Hay que tocarlo casi a su altura: si la jauría lo salta, se escapa. Los perritos sueltos son pocos, huyen al ver la jauría y algunos esperan sobre casetas. Los perritos repiten el salto de Jocko al pasar por el mismo punto (efecto ola). |
+| Salto | Bajo y rápido: un toque ≈ 2 perritos de alto; mantener pulsado ≈ 3,7 (necesario para huecos largos, plataformas y techos de vehículos). |
+| Huecos | Los perritos que caen se pierden. Su ancho se calcula con el alcance real del salto a la velocidad de ese punto; con la distancia llegan en series de 2 o 3 con poca calle entre ellos. |
+| Bombas | Explotan al tocarlas: se pierden los perritos en un radio de ~66 px. Con la distancia vienen en filas de 2 o 3. |
+| Vehículos | Auto **4**, furgoneta **8**, bus **14**, blindado **20** perritos para aplastarlo (da gemas y, los grandes, perritos pasajeros que se unen). Si no alcanza, los que chocan de frente se pierden: hay que saltarlo o caer sobre el techo. Desde ~400 m algunos vienen de frente (aviso «!» en el borde). |
 | Cajas ? | **Gigante** (8 s, Jocko crece, aplasta todo y pisa bombas), **Imán** (10 s, atrae gemas y perritos), **Escudo** (hasta 15 s, absorbe un golpe), **Clonación** (+5 perritos zombis). |
-| Dificultad | La velocidad sube de 11 a 20 m/s hasta los 2.500 m y ahí se detiene. Con la distancia aparecen huecos más anchos, bombas dobles, vehículos más exigentes y cambia el ambiente cada 900 m (Centro, Atardecer, Noche, Barrio tóxico). |
+| Dificultad | La velocidad sube de 12 a 21 m/s hasta los 2.000 m y ahí se detiene. Con la distancia la calle libre entre peligros se acorta, aparecen huecos más anchos, series de huecos y bombas, vehículos más exigentes, y cambia el ambiente cada 900 m (Centro, Atardecer, Noche, Barrio tóxico). |
 | Fin | Cuando no queda ningún perrito. |
 
 **Progreso:** al terminar, la partida se guarda primero en el dispositivo y luego en Firestore. Sin conexión (o si las reglas aún no están publicadas) se queda en cola y se sincroniza sola, en orden y sin duplicarse.
