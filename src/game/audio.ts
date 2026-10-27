@@ -34,7 +34,8 @@ function ac(): AudioContext | null {
   }
 }
 
-function tone(freq: number, dur: number, type: OscillatorType, vol: number, slideTo?: number) {
+/** Tono corto sintetizado (lo reutilizan todos los juegos; respeta el silencio global). */
+export function tone(freq: number, dur: number, type: OscillatorType, vol: number, slideTo?: number) {
   const a = ac();
   if (!a) return;
   const osc = a.createOscillator();

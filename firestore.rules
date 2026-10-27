@@ -237,5 +237,98 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+
+    // =================================================================
+    //  Plataforma de minijuegos: estadísticas propias de cada juego en
+    //  users/{uid}/gameStats/{juego}. No tocan users/{uid} (saldo,
+    //  récord y recompensas de CoCoCorre siguen igual).
+    // =================================================================
+
+    // El administrador puede consultar las estadísticas de cualquier juego.
+    match /users/{uid}/gameStats/{gameId} {
+      allow get, list: if isAdmin();
+    }
+
+    // ---------- Zombie Rush ----------
+    // Cada partida crea runs/{runId} (ID único generado en el navegador) y
+    // actualiza las estadísticas EN LA MISMA operación. Como runs/{runId} no
+    // puede existir antes, reenviar una partida nunca la suma dos veces.
+    function zrStatsPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/gameStats/zombie-rush;
+    }
+    function zrRunPath(uid, runId) {
+      return /databases/$(database)/documents/users/$(uid)/gameStats/zombie-rush/runs/$(runId);
+    }
+    // Topes por partida (iguales a los del juego: horda máxima 75, ~20 m/s).
+    function zrMaxDistance() { return 60000; }
+    function zrMaxHorde() { return 75; }
+    // Tiempo mínimo entre partidas: 25 ms por metro recorrido (el juego no pasa de 20 m/s = 50 ms/m).
+    function zrMsPerMeter() { return 25; }
+
+    function zrStatKeys() {
+      return ['bestDistance', 'maxHorde', 'totalConverted', 'totalGems', 'gamesPlayed', 'lastDistance',
+              'lastRunId', 'lastPlayedAt', 'bestDistanceAt', 'maxHordeAt', 'createdAt'];
+    }
+
+    // Se crea una sola vez, todo en cero.
+    function validNewZrStats() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(zrStatKeys()) && d.keys().hasAll(zrStatKeys())
+        && d.bestDistance == 0 && d.maxHorde == 0 && d.totalConverted == 0 && d.totalGems == 0
+        && d.gamesPlayed == 0 && d.lastDistance == 0 && d.lastRunId == ''
+        && d.lastPlayedAt == request.time && d.createdAt == request.time
+        && d.bestDistanceAt == null && d.maxHordeAt == null;
+    }
+
+    // Fin de partida: los valores deben salir EXACTAMENTE de la partida registrada.
+    function isZrRunUpdate(uid) {
+      let b = resource.data;
+      let a = request.resource.data;
+      let r = getAfter(zrRunPath(uid, a.lastRunId)).data;
+      return a.diff(b).affectedKeys().hasOnly(['bestDistance', 'maxHorde', 'totalConverted', 'totalGems',
+                                               'gamesPlayed', 'lastDistance', 'lastRunId', 'lastPlayedAt',
+                                               'bestDistanceAt', 'maxHordeAt'])
+        && a.lastRunId is string && a.lastRunId != b.lastRunId
+        && !exists(zrRunPath(uid, a.lastRunId))
+        && a.gamesPlayed == b.gamesPlayed + 1
+        && a.lastDistance == r.distance
+        && a.bestDistance == (r.distance > b.bestDistance ? r.distance : b.bestDistance)
+        && a.maxHorde == (r.maxHorde > b.maxHorde ? r.maxHorde : b.maxHorde)
+        && a.totalConverted == b.totalConverted + r.converted
+        && a.totalGems == b.totalGems + r.gems
+        && a.lastPlayedAt == request.time
+        && a.bestDistanceAt == (r.distance > b.bestDistance ? request.time : b.bestDistanceAt)
+        && a.maxHordeAt == (r.maxHorde > b.maxHorde ? request.time : b.maxHordeAt)
+        // No se pueden recorrer N metros en menos de N * 25 ms desde la partida anterior.
+        && request.time >= b.lastPlayedAt + duration.value(r.distance * zrMsPerMeter(), 'ms');
+    }
+
+    function validZrRun(uid, runId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['distance', 'maxHorde', 'converted', 'gems', 'durationMs', 'playedAt'])
+        && d.keys().hasAll(['distance', 'maxHorde', 'converted', 'gems', 'durationMs', 'playedAt'])
+        && runId.matches('^[A-Za-z0-9_-]{8,40}$')
+        && d.distance is int && d.distance >= 0 && d.distance <= zrMaxDistance()
+        && d.maxHorde is int && d.maxHorde >= 1 && d.maxHorde <= zrMaxHorde()
+        && d.converted is int && d.converted >= 0 && d.converted <= d.distance / 2 + 20
+        && d.gems is int && d.gems >= 0 && d.gems <= d.distance + 50
+        && d.durationMs is int && d.durationMs >= d.distance * 40
+        && d.playedAt == request.time
+        // Las estadísticas se actualizan en la misma operación.
+        && getAfter(zrStatsPath(uid)).data.lastRunId == runId;
+    }
+
+    match /users/{uid}/gameStats/zombie-rush {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && validNewZrStats();
+      allow update: if signedIn() && request.auth.uid == uid && isZrRunUpdate(uid);
+      allow delete: if false;
+
+      match /runs/{runId} {
+        allow get, list: if signedIn() && (request.auth.uid == uid || isAdmin());
+        allow create: if signedIn() && request.auth.uid == uid && validZrRun(uid, runId);
+        allow update, delete: if false;
+      }
+    }
   }
 }

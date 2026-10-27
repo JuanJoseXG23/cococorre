@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from './auth/AuthContext';
 import { forgetSessionAndReload, logout } from './firebase/auth';
 import { AuthScreen } from './auth/AuthScreen';
@@ -9,42 +9,52 @@ import { ProfileScreen } from './screens/ProfileScreen';
 import { RewardsScreen } from './rewards/RewardsScreen';
 import { AdminScreen } from './admin/AdminScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
+import { HubScreen } from './platform/HubScreen';
 import { Loading } from './components/Decorations';
 import { Logo } from './components/Logo';
+import { HASH_OF, screenFromHash, type Nav, type Screen } from './platform/navigation';
 import type { GameResult } from './game/types';
 
-export type Screen = 'menu' | 'game' | 'gameover' | 'rewards' | 'ranking' | 'profile' | 'admin';
-export type Nav = (s: Screen) => void;
+export type { Nav, Screen } from './platform/navigation';
 
-const HASHABLE: Screen[] = ['menu', 'rewards', 'ranking', 'profile', 'admin'];
+// El motor de Zombie Rush se descarga sólo al abrir el juego.
+const ZombieRushScreen = lazy(() => import('./games/zombie-rush/ZombieRushScreen').then((m) => ({ default: m.ZombieRushScreen })));
 
 export function App() {
   const { user, profile, profileError, retryProfile, loading, slow } = useAuth();
   const [retrying, setRetrying] = useState(false);
-  const [screen, setScreen] = useState<Screen>('menu');
+  // Al recargar con #zombie-rush, #rewards... se abre esa pantalla directamente.
+  const [screen, setScreen] = useState<Screen>(() => screenFromHash(location.hash));
   const [result, setResult] = useState<GameResult | null>(null);
   const [gameKey, setGameKey] = useState(0);
 
   const nav: Nav = useCallback((s) => {
     setScreen(s);
     if (s === 'game') setGameKey((k) => k + 1);
-    // El botón "atrás" del celular regresa al menú en vez de salir del juego.
-    const hash = s === 'menu' ? '' : `#${s}`;
-    if (HASHABLE.includes(s) && location.hash !== hash) history.pushState(null, '', hash || location.pathname);
+    // El botón "atrás" del celular regresa al menú en vez de salir de la página.
+    const h = HASH_OF[s];
+    if (h === undefined) return;
+    const hash = h ? `#${h}` : '';
+    if (location.hash !== hash) history.pushState(null, '', hash || location.pathname + location.search);
   }, []);
 
   useEffect(() => {
-    const onPop = () => {
-      const h = location.hash.slice(1) as Screen;
-      setScreen(HASHABLE.includes(h) ? h : 'menu');
-    };
+    const onPop = () => setScreen(screenFromHash(location.hash));
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  // Al cerrar sesión, volver al menú inicial.
+  // Al cerrar sesión, volver al menú inicial (sólo si había una sesión: al
+  // cargar la página `user` empieza en null y no debe borrar el #hash).
+  const hadUser = useRef(false);
   useEffect(() => {
-    if (!user) setScreen('menu');
+    if (user) {
+      hadUser.current = true;
+    } else if (hadUser.current) {
+      hadUser.current = false;
+      setScreen('menu');
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    }
   }, [user]);
 
   if (loading) {
@@ -108,7 +118,7 @@ export function App() {
       return (
         <GameScreen
           key={gameKey}
-          onExit={() => nav('menu')}
+          onExit={() => nav('cococorre')}
           onGameOver={(r) => {
             setResult(r);
             setScreen('gameover');
@@ -117,6 +127,14 @@ export function App() {
       );
     case 'gameover':
       return result ? <GameOverScreen result={result} nav={nav} onPlayAgain={() => nav('game')} /> : <MenuScreen nav={nav} />;
+    case 'cococorre':
+      return <MenuScreen nav={nav} />;
+    case 'zombie':
+      return (
+        <Suspense fallback={<div className="screen zr-screen"><div className="content"><Loading text="Cargando la horda..." /></div></div>}>
+          <ZombieRushScreen nav={nav} />
+        </Suspense>
+      );
     case 'rewards':
       return <RewardsScreen nav={nav} />;
     case 'ranking':
@@ -126,6 +144,6 @@ export function App() {
     case 'admin':
       return <AdminScreen nav={nav} />;
     default:
-      return <MenuScreen nav={nav} />;
+      return <HubScreen nav={nav} />;
   }
 }

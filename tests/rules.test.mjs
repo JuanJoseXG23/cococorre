@@ -1,4 +1,5 @@
-// Pruebas de las reglas de seguridad de Firestore (12 intentos de trampa + casos válidos).
+// Pruebas de las reglas de seguridad de Firestore (intentos de trampa + casos válidos,
+// incluidas las estadísticas de Zombie Rush).
 // Ejecutar (requiere Java 21+):
 //   npm i -D firebase-tools @firebase/rules-unit-testing
 //   npx firebase emulators:exec --only firestore --project demo-cococorre "node --test tests/rules.test.mjs"
@@ -252,4 +253,91 @@ test('corazones: sólo los posibles en la partida y una sola vez', async () => {
   await assertFails(updateDoc(doc(db, 'users/mari'), { heartsTotal: 4, heartsGame: u.gamesPlayed }));
   // nunca se puede bajar ni tocar los de otra persona
   await assertFails(updateDoc(doc(ctx('bob', 'bob'), 'users/mari'), { heartsTotal: 100, heartsGame: 1 }));
+});
+
+// ---------------------------------------------------------------- Zombie Rush
+const ZR = (uid) => `users/${uid}/gameStats/zombie-rush`;
+const zrNew = () => ({
+  bestDistance: 0, maxHorde: 0, totalConverted: 0, totalGems: 0, gamesPlayed: 0, lastDistance: 0, lastRunId: '',
+  lastPlayedAt: serverTimestamp(), bestDistanceAt: null, maxHordeAt: null, createdAt: serverTimestamp(),
+});
+function zrBatch(db, uid, prev, run, runId, overrides = {}, runOverrides = {}) {
+  const b = writeBatch(db);
+  const newBest = run.distance > prev.bestDistance;
+  const newHorde = run.maxHorde > prev.maxHorde;
+  b.update(doc(db, ZR(uid)), {
+    bestDistance: Math.max(prev.bestDistance, run.distance), maxHorde: Math.max(prev.maxHorde, run.maxHorde),
+    totalConverted: prev.totalConverted + run.converted, totalGems: prev.totalGems + run.gems,
+    gamesPlayed: prev.gamesPlayed + 1, lastDistance: run.distance, lastRunId: runId, lastPlayedAt: serverTimestamp(),
+    bestDistanceAt: newBest ? serverTimestamp() : prev.bestDistanceAt, maxHordeAt: newHorde ? serverTimestamp() : prev.maxHordeAt,
+    ...overrides,
+  });
+  b.set(doc(db, `${ZR(uid)}/runs/${runId}`), {
+    distance: run.distance, maxHorde: run.maxHorde, converted: run.converted, gems: run.gems,
+    durationMs: run.distance * 60, playedAt: serverTimestamp(), ...runOverrides,
+  });
+  return b.commit();
+}
+
+test('zombie rush: el progreso se crea en cero y sólo para uno mismo', async () => {
+  const db = ctx('mari', 'Mari');
+  await assertFails(setDoc(doc(db, ZR('mari')), { ...zrNew(), bestDistance: 9999 }));
+  await assertFails(setDoc(doc(db, ZR('bob')), zrNew()));
+  await assertFails(setDoc(doc(db, ZR('mari')), { ...zrNew(), extra: 1 }));
+  await assertSucceeds(setDoc(doc(db, ZR('mari')), zrNew()));
+  await assertSucceeds(getDoc(doc(db, ZR('mari'))));
+  await assertFails(getDoc(doc(ctx('bob', 'bob'), ZR('mari'))));
+  await assertSucceeds(getDoc(doc(ctx('boss', 'boss'), ZR('mari'))));
+  // CoCoCorre no se ve afectado: el saldo sigue protegido igual
+  await assertFails(updateDoc(doc(db, 'users/mari'), { points: 999999 }));
+});
+
+test('zombie rush: partida legítima OK; duplicada, inflada o sin registro FALLA', async () => {
+  await sleep(1300); // 40 m * 25 ms = 1 s mínimo desde la creación
+  const db = ctx('mari', 'Mari');
+  const prev = (await getDoc(doc(db, ZR('mari')))).data();
+  const run = { distance: 40, maxHorde: 6, converted: 5, gems: 12 };
+  // sin el registro de la partida
+  await assertFails(updateDoc(doc(db, ZR('mari')), {
+    bestDistance: 40, maxHorde: 6, totalConverted: 5, totalGems: 12, gamesPlayed: 1, lastDistance: 40,
+    lastRunId: 'run00000001', lastPlayedAt: serverTimestamp(), bestDistanceAt: serverTimestamp(), maxHordeAt: serverTimestamp(),
+  }));
+  // récord que no coincide con la partida
+  await assertFails(zrBatch(db, 'mari', prev, run, 'run00000001', { bestDistance: 5000 }));
+  // contador de partidas inflado
+  await assertFails(zrBatch(db, 'mari', prev, run, 'run00000001', { gamesPlayed: 9 }));
+  // horda por encima del máximo del juego
+  await assertFails(zrBatch(db, 'mari', prev, { ...run, maxHorde: 500 }, 'run00000001'));
+  // más convertidos de los posibles para la distancia
+  await assertFails(zrBatch(db, 'mari', prev, { ...run, converted: 400 }, 'run00000001'));
+  // duración imposible
+  await assertFails(zrBatch(db, 'mari', prev, run, 'run00000001', {}, { durationMs: 10 }));
+  // ID inválido
+  await assertFails(zrBatch(db, 'mari', prev, run, 'x'));
+  await assertSucceeds(zrBatch(db, 'mari', prev, run, 'run00000001'));
+  const after = (await getDoc(doc(db, ZR('mari')))).data();
+  if (after.bestDistance !== 40 || after.gamesPlayed !== 1 || after.totalConverted !== 5) throw new Error('estadísticas inesperadas');
+  // reenviar la misma partida (p. ej. tras perder la conexión): FALLA, no se duplica
+  await sleep(1300);
+  await assertFails(zrBatch(db, 'mari', after, run, 'run00000001'));
+  // las partidas son inmutables
+  await assertFails(updateDoc(doc(db, `${ZR('mari')}/runs/run00000001`), { distance: 9999 }));
+  await assertFails(deleteDoc(doc(db, `${ZR('mari')}/runs/run00000001`)));
+});
+
+test('zombie rush: distancia imposible para el tiempo transcurrido FALLA', async () => {
+  const db = ctx('mari', 'Mari');
+  const prev = (await getDoc(doc(db, ZR('mari')))).data();
+  // 20.000 m necesitan al menos 500 s desde la partida anterior
+  await assertFails(zrBatch(db, 'mari', prev, { distance: 20000, maxHorde: 10, converted: 50, gems: 100 }, 'run00000002'));
+});
+
+test('zombie rush: nadie escribe el progreso de otra persona', async () => {
+  const bob = ctx('bob', 'bob');
+  const prev = (await getDoc(doc(ctx('mari', 'Mari'), ZR('mari')))).data();
+  await assertFails(zrBatch(bob, 'mari', prev, { distance: 10, maxHorde: 2, converted: 1, gems: 0 }, 'run00000003'));
+  await assertFails(setDoc(doc(bob, `${ZR('mari')}/runs/run00000004`), {
+    distance: 1, maxHorde: 1, converted: 0, gems: 0, durationMs: 100, playedAt: serverTimestamp(),
+  }));
+  await assertFails(deleteDoc(doc(bob, ZR('mari'))));
 });

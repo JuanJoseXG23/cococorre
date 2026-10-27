@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { logout } from '../firebase/auth';
 import { Logo } from '../components/Logo';
-import { HeartIcon } from '../components/Icons';
+import { BackIcon, HeartIcon } from '../components/Icons';
 import { CharacterPreview } from '../components/CharacterPreview';
 import { Modal } from '../components/Modal';
 import { CHARACTERS, getSavedSkin, isUnlocked, saveSkin, type CharacterSkin } from '../game/characters';
@@ -30,6 +30,11 @@ export function MenuScreen({ nav }: { nav: Nav }) {
   return (
     <div className="screen">
       <div className="content">
+        <div className="topbar">
+          <button className="icon-btn" onClick={() => nav('menu')} aria-label="Volver al menú de juegos"><BackIcon /></button>
+          <span className="muted" style={{ fontWeight: 500 }}>Menú de juegos</span>
+          <span style={{ width: 42 }} />
+        </div>
         <Logo />
         <p className="welcome">{config.welcomeMessage}</p>
 
@@ -82,6 +87,7 @@ export function MenuScreen({ nav }: { nav: Nav }) {
           </p>
         </div>
 
+        <button className="btn ghost block" onClick={() => nav('menu')}>Volver al menú de juegos</button>
         <button className="link-btn" onClick={() => void logout()}>Cerrar sesión</button>
       </div>
 

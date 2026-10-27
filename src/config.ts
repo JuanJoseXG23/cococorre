@@ -1,4 +1,7 @@
-/** Configuración general del juego. */
+/** Configuración general. */
+/** Nombre de la plataforma de minijuegos (menú principal). */
+export const PLATFORM_NAME = 'CoCo Arcade';
+/** Nombre del primer juego. */
 export const GAME_NAME = 'CoCoCorre';
 export const PLAYER_NAME = 'María Isabel';
 

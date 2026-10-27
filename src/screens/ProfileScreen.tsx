@@ -6,6 +6,9 @@ import { BackIcon, WhatsAppIcon } from '../components/Icons';
 import { shareOnWhatsApp } from '../rewards/share';
 import { CocoFace } from '../components/Logo';
 import { CHARACTERS, isUnlocked } from '../game/characters';
+import { GAME_NAME } from '../config';
+import { ZOMBIE_RUSH_NAME } from '../games/zombie-rush/meta';
+import { useZombieProgress } from '../games/zombie-rush/useZombieProgress';
 import type { Nav } from '../App';
 
 export function formatDate(ts: { toDate: () => Date } | null | undefined): string {
@@ -15,6 +18,7 @@ export function formatDate(ts: { toDate: () => Date } | null | undefined): strin
 
 export function ProfileScreen({ nav }: { nav: Nav }) {
   const { profile, user } = useAuth();
+  const zr = useZombieProgress(user?.uid);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
 
@@ -41,6 +45,7 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
         <div className="card center">
           <div style={{ width: 90, margin: '0 auto' }}><CocoFace /></div>
           <h2 style={{ margin: '4px 0 16px' }}>{profile?.username}</h2>
+          <h3 className="muted" style={{ margin: '0 0 10px', fontWeight: 500, fontSize: '1rem' }}>{GAME_NAME}</h3>
           <div className="stats">
             <div className="stat"><div className="label">Puntos</div><div className="value">{profile?.points ?? 0}</div></div>
             <div className="stat"><div className="label">Récord</div><div className="value">{profile?.highScore ?? 0}</div></div>
@@ -54,6 +59,23 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="card">
+          <h2>{ZOMBIE_RUSH_NAME}</h2>
+          <div className="stats">
+            <div className="stat"><div className="label">Mejor distancia</div><div className="value">{zr.stats.bestDistance} m</div></div>
+            <div className="stat"><div className="label">Mayor horda</div><div className="value">{zr.stats.maxHorde}</div></div>
+            <div className="stat"><div className="label">Convertidos</div><div className="value">{zr.stats.totalConverted}</div></div>
+            <div className="stat"><div className="label">Partidas</div><div className="value">{zr.stats.gamesPlayed}</div></div>
+            <div className="stat"><div className="label">Gemas</div><div className="value">{zr.stats.totalGems}</div></div>
+            <div className="stat"><div className="label">Récord logrado</div><div className="value" style={{ fontSize: '1rem' }}>{formatDate(zr.stats.bestDistanceAt)}</div></div>
+          </div>
+          {zr.pendingCount > 0 && (
+            <p className="muted" style={{ marginBottom: 0, fontSize: '0.9rem' }}>
+              {zr.pendingCount} {zr.pendingCount === 1 ? 'partida pendiente' : 'partidas pendientes'} de sincronizar desde este dispositivo.
+            </p>
+          )}
         </div>
 
         <div className="card">
@@ -78,7 +100,7 @@ export function ProfileScreen({ nav }: { nav: Nav }) {
               </div>
             ))}
         </div>
-        <button className="btn block" onClick={() => nav('game')}>Jugar</button>
+        <button className="btn block" onClick={() => nav('menu')}>Elegir un juego</button>
       </div>
     </div>
   );

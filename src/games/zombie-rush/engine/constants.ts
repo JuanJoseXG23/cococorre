@@ -1,0 +1,96 @@
+/**
+ * Parámetros de diseño de Zombie Rush. Unidades: "px virtuales" (el mundo
+ * mide 480 de alto y se escala a la pantalla) y segundos.
+ * Eje Y hacia abajo: la superficie de la calle está en y = 0.
+ */
+
+/** Alto de referencia del mundo; el ancho depende de la pantalla. */
+export const VIRTUAL_H = 480;
+/** Ancho mínimo visible en horizontal y en vertical (celular de pie). */
+export const MIN_VIRTUAL_W = 640;
+export const MIN_VIRTUAL_W_PORTRAIT = 440;
+
+/** Paso fijo de la simulación (independiente de los FPS). */
+export const STEP = 1 / 120;
+/** Máximo de pasos por fotograma (evita la "espiral" al volver de otra pestaña). */
+export const MAX_STEPS_PER_FRAME = 12;
+
+// ---------- Salto ----------
+export const GRAVITY = 2600;
+export const JUMP_VELOCITY = 880;
+/** Mientras se mantiene pulsado (y sube), la gravedad se reduce a este factor. */
+export const HOLD_GRAVITY = 0.42;
+/** Tiempo máximo que cuenta mantener pulsado. */
+export const MAX_HOLD = 0.24;
+/** Margen para saltar justo después de salir de un borde. */
+export const COYOTE_TIME = 0.09;
+/** Si se pulsa un poco antes de aterrizar, el salto se ejecuta al tocar suelo. */
+export const JUMP_BUFFER = 0.12;
+/** Tolerancia horizontal para seguir pisando el borde de una superficie. */
+export const EDGE_TOLERANCE = 6;
+
+// ---------- Velocidad y dificultad ----------
+export const BASE_SPEED = 330;
+export const MAX_SPEED = 600;
+export const PX_PER_METER = 30;
+/** Metros en los que la dificultad llega al máximo (después ya no sube). */
+export const DIFFICULTY_FULL_AT_M = 2500;
+
+// ---------- Horda ----------
+/** Máximo de zombis en la horda (rendimiento y equilibrio). Igual que en firestore.rules. */
+export const HORDE_MAX = 75;
+/** Caja de colisión de un zombi (pies en x, y). */
+export const ZOMBIE_HALF_W = 9;
+export const ZOMBIE_H = 44;
+/** Por debajo de esta profundidad un zombi que cayó ya no se puede salvar. */
+export const PIT_DOOM_Y = 10;
+/** Desplazamiento vertical y escala de las 3 filas de profundidad de la horda. */
+export const LANE_Y = [4, -3, -10];
+export const LANE_SCALE = [1, 0.94, 0.88];
+
+// ---------- Obstáculos ----------
+export type VehicleKind = 'car' | 'van' | 'bus' | 'armored';
+
+export interface VehicleSpec {
+  label: string;
+  w: number;
+  h: number;
+  /** Zombis necesarios para aplastarlo. */
+  req: number;
+  /** Gemas al aplastarlo. */
+  gems: number;
+  /** Pasajeros que se unen a la horda al aplastarlo. */
+  riders: number;
+  /** Dificultad (0..1) a partir de la que aparece. */
+  minDifficulty: number;
+}
+
+export const VEHICLES: Record<VehicleKind, VehicleSpec> = {
+  car: { label: 'Auto', w: 132, h: 60, req: 3, gems: 2, riders: 0, minDifficulty: 0 },
+  van: { label: 'Furgoneta', w: 164, h: 88, req: 6, gems: 3, riders: 1, minDifficulty: 0.12 },
+  bus: { label: 'Bus', w: 270, h: 112, req: 10, gems: 5, riders: 2, minDifficulty: 0.3 },
+  armored: { label: 'Blindado', w: 230, h: 120, req: 15, gems: 7, riders: 3, minDifficulty: 0.55 },
+};
+
+export const BOMB_RADIUS = 16;
+/** Radio de la explosión: los zombis dentro de él se pierden. */
+export const BLAST_RADIUS_X = 58;
+
+// ---------- Potenciadores ----------
+export type PowerKind = 'giant' | 'magnet' | 'shield' | 'clone';
+
+export interface PowerSpec {
+  label: string;
+  /** Duración en segundos (0 = instantáneo). */
+  duration: number;
+  color: string;
+  hint: string;
+}
+
+export const POWERS: Record<PowerKind, PowerSpec> = {
+  giant: { label: 'Gigante', duration: 8, color: '#ff7a45', hint: 'El líder crece: aplasta vehículos y pisa bombas sin daño' },
+  magnet: { label: 'Imán', duration: 10, color: '#4cc3ff', hint: 'Atrae gemas y civiles cercanos' },
+  shield: { label: 'Escudo', duration: 15, color: '#b48cff', hint: 'Absorbe el próximo golpe de bomba o vehículo' },
+  clone: { label: 'Clonación', duration: 0, color: '#7be36a', hint: '+5 zombis al instante' },
+};
+export const CLONE_AMOUNT = 5;
