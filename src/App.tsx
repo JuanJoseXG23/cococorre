@@ -17,7 +17,7 @@ import type { GameResult } from './game/types';
 
 export type { Nav, Screen } from './platform/navigation';
 
-// El motor de Zombie Rush se descarga sólo al abrir el juego.
+// El motor de Jockombi se descarga sólo al abrir el juego.
 const ZombieRushScreen = lazy(() => import('./games/zombie-rush/ZombieRushScreen').then((m) => ({ default: m.ZombieRushScreen })));
 
 export function App() {

@@ -4,7 +4,7 @@ import { ZOMBIE_RUSH_ID } from './meta';
 import type { RunStats } from './engine/types';
 
 /**
- * Progreso persistente de Zombie Rush, separado de CoCoCorre:
+ * Progreso persistente de Jockombi, separado de CoCoCorre:
  *
  *   users/{uid}/gameStats/zombie-rush            ← estadísticas acumuladas
  *   users/{uid}/gameStats/zombie-rush/runs/{id}  ← una entrada por partida
@@ -222,10 +222,10 @@ async function doSync(uid: string): Promise<SyncResult> {
         try {
           await ensureZombieStats(uid);
         } catch (e2) {
-          console.warn('[Zombie Rush] No se pudo crear el progreso en la nube', e2);
+          console.warn('[Jockombi] No se pudo crear el progreso en la nube', e2);
         }
       } else {
-        console.warn('[Zombie Rush] Partida pendiente de sincronizar', e);
+        console.warn('[Jockombi] Partida pendiente de sincronizar', e);
       }
       return (e as { code?: string })?.code === 'unavailable' ? 'offline' : 'pending';
     }

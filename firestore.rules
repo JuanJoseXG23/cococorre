@@ -249,7 +249,7 @@ service cloud.firestore {
       allow get, list: if isAdmin();
     }
 
-    // ---------- Zombie Rush ----------
+    // ---------- Jockombi ----------
     // Cada partida crea runs/{runId} (ID único generado en el navegador) y
     // actualiza las estadísticas EN LA MISMA operación. Como runs/{runId} no
     // puede existir antes, reenviar una partida nunca la suma dos veces.

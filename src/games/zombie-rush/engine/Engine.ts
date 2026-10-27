@@ -15,7 +15,7 @@ export interface EngineOptions {
 }
 
 /**
- * Motor de Zombie Rush: un único bucle requestAnimationFrame que avanza la
+ * Motor de Jockombi: un único bucle requestAnimationFrame que avanza la
  * simulación con paso fijo (misma física a 30, 60 o 144 Hz) y dibuja.
  * `destroy()` cancela el bucle y quita todos los listeners: una partida
  * anterior nunca puede seguir modificando una nueva.

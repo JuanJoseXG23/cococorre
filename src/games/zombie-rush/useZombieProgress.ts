@@ -7,7 +7,7 @@ import {
 export type CloudState = 'loading' | 'ok' | 'unavailable';
 
 /**
- * Estadísticas de Zombie Rush del usuario: nube + partidas pendientes de
+ * Estadísticas de Jockombi del usuario: nube + partidas pendientes de
  * subir. Reintenta la sincronización al volver la conexión y cada 30 s.
  */
 export function useZombieProgress(uid: string | undefined) {
@@ -33,11 +33,11 @@ export function useZombieProgress(uid: string | undefined) {
         } else if (!ensured) {
           // Primera vez: se crea el progreso en cero (lo exigen las reglas).
           ensured = true;
-          ensureZombieStats(uid).catch((e) => console.warn('[Zombie Rush] No se pudo crear el progreso', e));
+          ensureZombieStats(uid).catch((e) => console.warn('[Jockombi] No se pudo crear el progreso', e));
         }
       },
       (e) => {
-        console.warn('[Zombie Rush] Progreso en la nube no disponible; se usa el de este dispositivo', e);
+        console.warn('[Jockombi] Progreso en la nube no disponible; se usa el de este dispositivo', e);
         setCloudState('unavailable');
       },
     );

@@ -6,7 +6,7 @@
  *   menu       → menú principal de juegos (#)
  *   cococorre  → inicio de CoCoCorre (#cococorre)
  *   game       → partida de CoCoCorre      gameover → resultados de CoCoCorre
- *   zombie     → Zombie Rush (#zombie-rush)
+ *   zombie     → Jockombi (#jockombi; #zombie-rush sigue funcionando)
  *   rewards, ranking, profile, admin → pantallas de la cuenta
  */
 export type Screen =
@@ -19,15 +19,19 @@ export type Nav = (s: Screen) => void;
 export const HASH_OF: Partial<Record<Screen, string>> = {
   menu: '',
   cococorre: 'cococorre',
-  zombie: 'zombie-rush',
+  zombie: 'jockombi',
   rewards: 'rewards',
   ranking: 'ranking',
   profile: 'profile',
   admin: 'admin',
 };
 
+/** Direcciones antiguas que siguen abriendo la pantalla correcta. */
+const LEGACY_HASH: Record<string, Screen> = { 'zombie-rush': 'zombie' };
+
 export function screenFromHash(hash: string): Screen {
   const h = hash.replace(/^#/, '');
+  if (LEGACY_HASH[h]) return LEGACY_HASH[h];
   const found = (Object.entries(HASH_OF) as [Screen, string][]).find(([, v]) => v === h);
   return found ? found[0] : 'menu';
 }

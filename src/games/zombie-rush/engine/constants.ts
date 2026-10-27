@@ -1,5 +1,5 @@
 /**
- * Parámetros de diseño de Zombie Rush. Unidades: "px virtuales" (el mundo
+ * Parámetros de diseño de Jockombi. Unidades: "px virtuales" (el mundo
  * mide 480 de alto y se escala a la pantalla) y segundos.
  * Eje Y hacia abajo: la superficie de la calle está en y = 0.
  */

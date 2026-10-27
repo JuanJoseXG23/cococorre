@@ -64,7 +64,7 @@
 @keyframes roadMove { to { background-position: 56px 0; } }
 .cover-coco-pet { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); }
 
-/* Portada de Zombie Rush */
+/* Portada de Jockombi (módulo zombie-rush) */
 .cover-zombie { position: absolute; inset: 0; background: linear-gradient(180deg, #1d1d48 0%, #4b3b7d 60%, #8a5aa0 100%); }
 .cover-zombie-moon { position: absolute; right: 12%; top: 12%; width: 18%; aspect-ratio: 1; border-radius: 50%; background: #f3f0d8; box-shadow: 0 0 40px rgba(243, 240, 216, 0.5); }
 .cover-zombie-city {
@@ -101,7 +101,7 @@
 }
 
 /* =====================================================================
-   Zombie Rush
+   Jockombi (módulo zombie-rush)
    ===================================================================== */
 .zr-screen { background: radial-gradient(120% 80% at 50% 0%, #4b3b7d 0%, #241d3f 55%, #15112a 100%); color: #f4f0ff; }
 .zr-screen > .content.zr-content { max-width: 480px; }
@@ -109,11 +109,12 @@
 .zr-icon { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.18); color: #ffffff; }
 .zr-chip { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #b9f59a; font-weight: 600; }
 .zr-logo { text-align: center; font-weight: 700; line-height: 0.9; user-select: none; letter-spacing: 0.02em; text-transform: uppercase; }
-.zr-logo.big { font-size: clamp(2.8rem, 13vw, 4.2rem); }
+.zr-logo.big { font-size: clamp(2.8rem, 15vw, 4.6rem); padding-bottom: 0.25em; }
 .zr-logo.small { font-size: 1.8rem; }
-.zr-logo-a { position: relative; display: inline-block; color: #8fe060; text-shadow: 0 4px 0 #3d7a24, 0 8px 18px rgba(0, 0, 0, 0.4); transform: rotate(-3deg); }
-.zr-drips { position: absolute; left: 4%; top: 88%; width: 92%; height: 0.32em; color: #8fe060; }
-.zr-logo-b { display: block; color: #ff9a3d; text-shadow: 0 4px 0 #b4541a, 0 8px 18px rgba(0, 0, 0, 0.4); transform: rotate(-3deg) translateX(0.6em); margin-top: 0.12em; }
+.zr-logo-word { display: inline-flex; align-items: baseline; transform: rotate(-3deg); }
+.zr-logo-a { position: relative; display: inline-block; color: #8fe060; text-shadow: 0 4px 0 #3d7a24, 0 8px 18px rgba(0, 0, 0, 0.4); }
+.zr-drips { position: absolute; left: 10%; top: calc(100% + 0.06em); width: 80%; height: 0.2em; color: #6cc23f; opacity: 0.9; }
+.zr-logo-b { display: inline-block; color: #ff9a3d; text-shadow: 0 4px 0 #b4541a, 0 8px 18px rgba(0, 0, 0, 0.4); }
 .zr-hero { height: 150px; border-radius: 22px; overflow: hidden; background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1)); border: 1px solid rgba(255, 255, 255, 0.08); }
 .zr-hero-canvas { width: 100%; height: 100%; display: block; }
 .zr-tagline { text-align: center; margin: 0; color: #d9d2f2; }

@@ -21,7 +21,7 @@ interface Finished {
   save: SyncResult | 'saving';
 }
 
-/** Zombie Rush: inicio → partida → resultados, dentro de una sola pantalla de la plataforma. */
+/** Jockombi: inicio → partida → resultados, dentro de una sola pantalla de la plataforma. */
 export function ZombieRushScreen({ nav }: { nav: Nav }) {
   const { user } = useAuth();
   const progress = useZombieProgress(user?.uid);

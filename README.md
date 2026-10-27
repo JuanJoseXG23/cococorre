@@ -1,13 +1,13 @@
-# 🐶❤️ CoCo Arcade — CoCoCorre + Zombie Rush
+# 🐶❤️ CoCo Arcade — CoCoCorre + Jockombi
 
 Una plataforma de minijuegos hecha con amor para **María Isabel**. Desde el menú principal se elige el juego:
 
 | Juego | De qué se trata |
 |---|---|
 | **CoCoCorre** | Ayuda a **Coco** (un Pomerania) a cruzar calles, ríos y vías de tren, gana puntos y cámbialos por recompensas reales (abrazos, besos, Nucitas…). |
-| **Zombie Rush** *(nombre provisional)* | Endless runner: guía a **Zeta** por la ciudad, convierte civiles y haz crecer una horda de zombis que salta, esquiva huecos y bombas y aplasta vehículos. |
+| **Jockombi** | Endless runner: guía a **Zeta** por la ciudad, convierte civiles y haz crecer una horda de zombis que salta, esquiva huecos y bombas y aplasta vehículos. |
 
-> Novedades de la plataforma: ver [12. Plataforma de minijuegos](#12-plataforma-de-minijuegos) y [13. Zombie Rush](#13-zombie-rush).
+> Novedades de la plataforma: ver [12. Plataforma de minijuegos](#12-plataforma-de-minijuegos) y [13. Jockombi](#13-jockombi).
 
 - 🕹️ Juego infinito generado por carriles, con 10 niveles de dificultad según los puntos.
 - 🔐 Cuentas con usuario y contraseña (Firebase Authentication).
@@ -34,7 +34,7 @@ Una plataforma de minijuegos hecha con amor para **María Isabel**. Desde el men
 10. [Personalizar el juego](#10-personalizar-el-juego)
 11. [Problemas frecuentes](#11-problemas-frecuentes)
 12. [Plataforma de minijuegos](#12-plataforma-de-minijuegos)
-13. [Zombie Rush](#13-zombie-rush)
+13. [Jockombi](#13-jockombi)
 
 ---
 
@@ -134,7 +134,7 @@ leaderboard/{uid}               ← ranking público (copia del récord)
 admins/{uid}                    ← sólo se crea desde la consola de Firebase
 config/game                     ← mensajes y dificultad (editable por admin)
 
-users/{uid}/gameStats/zombie-rush          ← progreso de Zombie Rush (separado)
+users/{uid}/gameStats/zombie-rush          ← progreso de Jockombi (separado)
     bestDistance, maxHorde, totalConverted, totalGems, gamesPlayed,
     lastDistance, lastRunId, lastPlayedAt, bestDistanceAt, maxHordeAt, createdAt
 users/{uid}/gameStats/zombie-rush/runs/{runId}   ← una entrada por partida (inmutable)
@@ -169,8 +169,8 @@ Todo lo crítico se valida en [`firestore.rules`](firestore.rules), en los servi
 
 > **Límite honesto:** en cualquier juego que corre en el navegador, alguien con conocimientos técnicos podría enviar una puntuación falsa *dentro de los límites* (máximo 5.000 por partida y no más rápido de lo humanamente posible). Las **recompensas** sí quedan 100 % protegidas: nunca se pueden reclamar dos veces, ni pagar menos, ni gastar puntos que no se tienen. El administrador puede revisar el historial de partidas y ajustar puntos si ve algo raro.
 
-| Duplicar una partida de Zombie Rush (reintento, sin conexión) | `runs/{runId}` no puede existir antes y se crea en la misma operación que suma las estadísticas. |
-| Inventar récords de Zombie Rush | Las estadísticas deben salir exactamente de la partida registrada; topes por partida (horda ≤ 75, convertidos y gemas acordes a la distancia) y tiempo mínimo entre partidas (25 ms por metro). |
+| Duplicar una partida de Jockombi (reintento, sin conexión) | `runs/{runId}` no puede existir antes y se crea en la misma operación que suma las estadísticas. |
+| Inventar récords de Jockombi | Las estadísticas deben salir exactamente de la partida registrada; topes por partida (horda ≤ 75, convertidos y gemas acordes a la distancia) y tiempo mínimo entre partidas (25 ms por metro). |
 
 Las reglas incluyen pruebas automáticas en `tests/rules.test.mjs` (21 grupos de casos) — ver [Problemas frecuentes](#11-problemas-frecuentes) para ejecutarlas.
 
@@ -470,7 +470,7 @@ Para cargarlas: **Administración → Recompensas → "Cargar catálogo de 14 re
 
 **Página en blanco / 404 en GitHub Pages** → en Settings → Pages la fuente debe ser **GitHub Actions** (Paso 9).
 
-**Zombie Rush dice "Guardado en este dispositivo · se sincronizará"** → las reglas nuevas de `firestore.rules` (sección *Zombie Rush*) aún no están publicadas, o no hay conexión. Publícalas (Paso 5) y abre el juego: las partidas pendientes se suben solas, sin duplicarse. También es normal justo después de la primera partida: las reglas piden un tiempo mínimo entre partidas y se reintenta cada 30 s.
+**Jockombi dice "Guardado en este dispositivo · se sincronizará"** → las reglas nuevas de `firestore.rules` (sección *Jockombi*) aún no están publicadas, o no hay conexión. Publícalas (Paso 5) y abre el juego: las partidas pendientes se suben solas, sin duplicarse. También es normal justo después de la primera partida: las reglas piden un tiempo mínimo entre partidas y se reintenta cada 30 s.
 
 **El ranking aparece vacío o no se actualiza** → vuelve a publicar `firestore.rules` (Paso 5): la regla de `leaderboard` se agregó después. Cada jugadora aparece al iniciar sesión o terminar una partida.
 
@@ -499,14 +499,14 @@ src/
 │   └── navigation.ts      # Pantallas y #hash de cada una
 ├── games/
 │   ├── cococorre/entry.tsx     # Registro de CoCoCorre (su código sigue en src/game y src/screens)
-│   └── zombie-rush/            # Módulo independiente de Zombie Rush
+│   └── zombie-rush/            # Módulo independiente de Jockombi (la carpeta y el ID de datos conservan el nombre original)
 │       ├── meta.ts             #   nombre provisional (cámbialo aquí)
 │       ├── entry.tsx           #   tarjeta del menú
 │       ├── ZombieRushScreen.tsx#   inicio, partida, pausa y resultados
 │       ├── progress.ts         #   Firestore + cola local sin conexión
 │       └── engine/             #   motor: world.ts (simulación pura), generator.ts, render.ts,
 │                               #   sprites.ts, input.ts, sfx.ts, physics.ts, constants.ts
-└── styles/platform.css    # estilos del menú y de Zombie Rush
+└── styles/platform.css    # estilos del menú y de Jockombi
 ```
 
 **Navegación** (todo con `#hash`, sin rutas de servidor → nunca 404 en GitHub Pages, ni al recargar):
@@ -515,18 +515,18 @@ src/
 |---|---|
 | `…/cococorre/` | Menú principal de juegos |
 | `…/cococorre/#cococorre` | Inicio de CoCoCorre (personajes, Jugar) |
-| `…/cococorre/#zombie-rush` | Zombie Rush |
+| `…/cococorre/#jockombi` | Jockombi (`#zombie-rush` también funciona) |
 | `#rewards`, `#ranking`, `#profile`, `#admin` | Cuenta (igual que antes) |
 
 **Agregar un juego nuevo:**
 1. Crea `src/games/<juego>/` con su pantalla y un `entry.tsx` que exporte un `GameEntry` (nombre, descripción, colores, portada y progreso).
 2. Agrégalo a `GAMES` en `src/platform/registry.ts`.
 3. Añade su pantalla en `src/platform/navigation.ts` (tipo `Screen` y `HASH_OF`) y en el `switch` de `src/App.tsx`.
-4. Si guarda progreso, usa `users/{uid}/gameStats/<juego>` y agrega sus reglas en `firestore.rules` (ver las de Zombie Rush como plantilla).
+4. Si guarda progreso, usa `users/{uid}/gameStats/<juego>` y agrega sus reglas en `firestore.rules` (ver las de Jockombi como plantilla).
 
-**Recompensas y puntos:** la economía existente no cambió. Los puntos del saldo **sólo** se ganan en CoCoCorre (lo exigen las reglas) y las recompensas siguen siendo de una sola vez, en escalera. Zombie Rush tiene su propio progreso (récords, horda, convertidos, gemas) y **no** suma puntos al saldo. Si en el futuro se quiere que otros juegos aporten puntos, hay que diseñar una regla nueva en `users/{uid}` (p. ej. un tope diario por juego validado contra `gameStats`), no reutilizar `isGameUpdate`, que está atada a la partida de CoCoCorre.
+**Recompensas y puntos:** la economía existente no cambió. Los puntos del saldo **sólo** se ganan en CoCoCorre (lo exigen las reglas) y las recompensas siguen siendo de una sola vez, en escalera. Jockombi tiene su propio progreso (récords, horda, convertidos, gemas) y **no** suma puntos al saldo. Si en el futuro se quiere que otros juegos aporten puntos, hay que diseñar una regla nueva en `users/{uid}` (p. ej. un tope diario por juego validado contra `gameStats`), no reutilizar `isGameUpdate`, que está atada a la partida de CoCoCorre.
 
-## 13. Zombie Rush
+## 13. Jockombi
 
 **Controles:** Espacio / ↑ / W / clic / tocar = saltar (**mantener** = salto más alto y largo). **P** o **Esc** = pausa. Botones en pantalla: sonido y pausa (continuar, reiniciar, inicio del juego, menú).
 

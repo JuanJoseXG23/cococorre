@@ -1,5 +1,5 @@
 // Pruebas de las reglas de seguridad de Firestore (intentos de trampa + casos válidos,
-// incluidas las estadísticas de Zombie Rush).
+// incluidas las estadísticas de Jockombi).
 // Ejecutar (requiere Java 21+):
 //   npm i -D firebase-tools @firebase/rules-unit-testing
 //   npx firebase emulators:exec --only firestore --project demo-cococorre "node --test tests/rules.test.mjs"
@@ -255,7 +255,7 @@ test('corazones: sólo los posibles en la partida y una sola vez', async () => {
   await assertFails(updateDoc(doc(ctx('bob', 'bob'), 'users/mari'), { heartsTotal: 100, heartsGame: 1 }));
 });
 
-// ---------------------------------------------------------------- Zombie Rush
+// ---------------------------------------------------------------- Jockombi
 const ZR = (uid) => `users/${uid}/gameStats/zombie-rush`;
 const zrNew = () => ({
   bestDistance: 0, maxHorde: 0, totalConverted: 0, totalGems: 0, gamesPlayed: 0, lastDistance: 0, lastRunId: '',
@@ -279,7 +279,7 @@ function zrBatch(db, uid, prev, run, runId, overrides = {}, runOverrides = {}) {
   return b.commit();
 }
 
-test('zombie rush: el progreso se crea en cero y sólo para uno mismo', async () => {
+test('jockombi: el progreso se crea en cero y sólo para uno mismo', async () => {
   const db = ctx('mari', 'Mari');
   await assertFails(setDoc(doc(db, ZR('mari')), { ...zrNew(), bestDistance: 9999 }));
   await assertFails(setDoc(doc(db, ZR('bob')), zrNew()));
@@ -292,7 +292,7 @@ test('zombie rush: el progreso se crea en cero y sólo para uno mismo', async ()
   await assertFails(updateDoc(doc(db, 'users/mari'), { points: 999999 }));
 });
 
-test('zombie rush: partida legítima OK; duplicada, inflada o sin registro FALLA', async () => {
+test('jockombi: partida legítima OK; duplicada, inflada o sin registro FALLA', async () => {
   await sleep(1300); // 40 m * 25 ms = 1 s mínimo desde la creación
   const db = ctx('mari', 'Mari');
   const prev = (await getDoc(doc(db, ZR('mari')))).data();
@@ -325,14 +325,14 @@ test('zombie rush: partida legítima OK; duplicada, inflada o sin registro FALLA
   await assertFails(deleteDoc(doc(db, `${ZR('mari')}/runs/run00000001`)));
 });
 
-test('zombie rush: distancia imposible para el tiempo transcurrido FALLA', async () => {
+test('jockombi: distancia imposible para el tiempo transcurrido FALLA', async () => {
   const db = ctx('mari', 'Mari');
   const prev = (await getDoc(doc(db, ZR('mari')))).data();
   // 20.000 m necesitan al menos 500 s desde la partida anterior
   await assertFails(zrBatch(db, 'mari', prev, { distance: 20000, maxHorde: 10, converted: 50, gems: 100 }, 'run00000002'));
 });
 
-test('zombie rush: nadie escribe el progreso de otra persona', async () => {
+test('jockombi: nadie escribe el progreso de otra persona', async () => {
   const bob = ctx('bob', 'bob');
   const prev = (await getDoc(doc(ctx('mari', 'Mari'), ZR('mari')))).data();
   await assertFails(zrBatch(bob, 'mari', prev, { distance: 10, maxHorde: 2, converted: 1, gems: 0 }, 'run00000003'));

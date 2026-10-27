@@ -1,4 +1,4 @@
-// Pruebas de la simulación de Zombie Rush (sin navegador).
+// Pruebas de la simulación de Jockombi (sin navegador).
 // Ejecutar:  npm run test:zombie
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
